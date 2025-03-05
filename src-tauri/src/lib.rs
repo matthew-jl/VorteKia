@@ -10,6 +10,7 @@ use std::env;
 use std::{fs::File, io::Read};
 use tauri::{command, Manager, State};
 
+use entity::customer::Model as CustomerModel;
 use crate::controllers::customer_handler::CustomerHandler;
 pub mod controllers;
 
@@ -24,27 +25,27 @@ struct UiConfig {
     ui_id: String,
 }
 
-struct AppState {
+pub struct AppState {
     db: DatabaseConnection,
     redis_pool: RedisPool,
 }
 
 #[derive(Serialize)]
 #[serde(tag = "status", rename_all = "lowercase")]
-enum ApiResponse<T: Serialize> {
+pub enum ApiResponse<T: Serialize> {
     Success { data: T, message: Option<String> },
     Error { data: Option<T>, message: String },
 }
 
 impl<T: Serialize> ApiResponse<T> {
-    fn success(data: T) -> Self {
+    pub fn success(data: T) -> Self {
         ApiResponse::Success {
             data,
             message: None,
         }
     }
 
-    fn error(message: String) -> Self {
+    pub fn error(message: String) -> Self {
         ApiResponse::Error {
             data: None,
             message,
@@ -281,7 +282,7 @@ fn get_ui_name_from_config() -> String {
 
 // View all customer accounts
 #[tauri::command]
-async fn view_customer_accounts(state: State<'_, AppState>) -> Result<Vec<Model>, String> {
+async fn view_customer_accounts(state: State<'_, AppState>) -> Result<Vec<CustomerModel>, String> {
     CustomerHandler::view_customer_accounts(&state).await
 }
 
@@ -291,7 +292,7 @@ async fn save_customer_data(
     state: State<'_, AppState>,
     name: String,
     virtual_balance: String,
-) -> Result<String, String> {
+) -> Result<ApiResponse<String>, String> {
     CustomerHandler::save_customer_data(&state, name, virtual_balance).await
 }
 
@@ -347,7 +348,11 @@ pub fn run() {
             create_post,
             delete_post,
             update_post,
-            get_ui_name_from_config
+            get_ui_name_from_config,
+            view_customer_accounts,
+            save_customer_data,
+            update_customer_data,
+            delete_customer_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

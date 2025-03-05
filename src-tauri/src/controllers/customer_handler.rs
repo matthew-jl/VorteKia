@@ -1,6 +1,7 @@
 use sea_orm::{ActiveModelTrait, EntityTrait};
 use entity::customer::{self, ActiveModel, Model};
-use crate::AppState;
+use uuid::Uuid;
+use crate::{ApiResponse, AppState};
 
 pub struct CustomerHandler;
 
@@ -18,15 +19,19 @@ impl CustomerHandler {
         state: &AppState,
         name: String,
         virtual_balance: String,
-    ) -> Result<String, String> {
-        let new_customer = ActiveModel {
+    ) -> Result<ApiResponse<String>, String> {
+        // Generate a UUID for the customer_id
+        let customer_id = Uuid::new_v4().to_string();  // Generate a v4 UUID
+
+        let new_customer = customer::ActiveModel {
+            customer_id: sea_orm::ActiveValue::Set(customer_id),  // Set the generated customer_id
             name: sea_orm::ActiveValue::Set(name),
             virtual_balance: sea_orm::ActiveValue::Set(virtual_balance),
             ..Default::default()
         };
 
         match customer::Entity::insert(new_customer).exec(&state.db).await {
-            Ok(_) => Ok("Customer created successfully".to_string()),
+            Ok(_) => Ok(ApiResponse::success("Customer created successfully".to_string())),
             Err(err) => Err(format!("Error creating customer: {}", err)),
         }
     }
@@ -38,21 +43,24 @@ impl CustomerHandler {
         name: Option<String>,
         virtual_balance: Option<String>,
     ) -> Result<String, String> {
-        let mut customer = match customer::Entity::find_by_id(customer_id).one(&state.db).await {
+        let customer = match customer::Entity::find_by_id(customer_id).one(&state.db).await {
             Ok(Some(customer)) => customer,
             Ok(None) => return Err("Customer not found".to_string()),
             Err(err) => return Err(format!("Error fetching customer: {}", err)),
         };
 
+        // Create an ActiveModel from the retrieved customer
+        let mut active_customer: customer::ActiveModel = customer.into();
+
         if let Some(new_name) = name {
-            customer.name = new_name;
+            active_customer.name = sea_orm::ActiveValue::Set(new_name);
         }
 
         if let Some(new_balance) = virtual_balance {
-            customer.virtual_balance = new_balance;
+            active_customer.virtual_balance = sea_orm::ActiveValue::Set(new_balance);
         }
 
-        match customer.update(&state.db).await {
+        match active_customer.update(&state.db).await {
             Ok(_) => Ok("Customer updated successfully".to_string()),
             Err(err) => Err(format!("Error updating customer: {}", err)),
         }
