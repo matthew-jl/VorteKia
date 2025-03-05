@@ -280,9 +280,24 @@ fn get_ui_name_from_config() -> String {
     map_ui_id_to_name(&config.chosen_ui.ui_id).to_string()
 }
 
+// Customer login
+#[tauri::command]
+async fn customer_login(state: State<'_, AppState>, customer_id: String) -> Result<ApiResponse<String>, String> { // Expose customer_login
+    CustomerHandler::customer_login(&state, customer_id).await
+}
+
+// Get customer details by ID
+#[tauri::command]
+async fn get_customer_details(
+    state: State<'_, AppState>,
+    customer_id: String,
+) -> Result<ApiResponse<entity::customer::Model>, String> { // Return ApiResponse with Customer Model
+    CustomerHandler::get_customer_details(&state, customer_id).await
+}
+
 // View all customer accounts
 #[tauri::command]
-async fn view_customer_accounts(state: State<'_, AppState>) -> Result<Vec<CustomerModel>, String> {
+async fn view_customer_accounts(state: State<'_, AppState>) -> Result<ApiResponse<Vec<CustomerModel>>, String> {
     CustomerHandler::view_customer_accounts(&state).await
 }
 
@@ -305,6 +320,16 @@ async fn update_customer_data(
     virtual_balance: Option<String>,
 ) -> Result<String, String> {
     CustomerHandler::update_customer_data(&state, customer_id, name, virtual_balance).await
+}
+
+// Top up virtual balance
+#[tauri::command]
+async fn top_up_virtual_balance(
+    state: State<'_, AppState>,
+    customer_id: String,
+    top_up_amount_str: String, // Match parameter type with backend function
+) -> Result<ApiResponse<String>, String> {
+    CustomerHandler::top_up_virtual_balance(&state, customer_id, top_up_amount_str).await
 }
 
 // Delete a customer
@@ -349,9 +374,12 @@ pub fn run() {
             delete_post,
             update_post,
             get_ui_name_from_config,
+            customer_login,
+            get_customer_details,
             view_customer_accounts,
             save_customer_data,
             update_customer_data,
+            top_up_virtual_balance,
             delete_customer_data,
         ])
         .run(tauri::generate_context!())

@@ -11,30 +11,62 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  Search,
-  Filter,
-  Bell,
-  MessageSquare,
-  Wallet,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Search, Filter, Bell, MessageSquare, Wallet } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
 import { RestaurantCard } from "@/components/restaurant-card";
 import { RideCard } from "@/components/ride-card";
 import { restaurants, rides } from "@/lib/dummy-data";
+import { UserProvider, useUser } from "@/context/user-context";
+import { invoke } from "@tauri-apps/api/core";
+import { ApiResponse, Customer } from "@/types";
+import { Toaster } from "@/components/ui/sonner";
+import { VirtualBalanceForm } from "@/components/virtual-balance-form";
 
-export default function CustomerUI() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [customerName, setCustomerName] = useState("Guest");
+function CustomerUIComponent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
+  const { isLoggedIn, login, logout, uid, customerName, virtualBalance } =
+    useUser(); // Use UserContext
+  const [isTopUpDialogOpen, setIsTopUpDialogOpen] = useState(false);
 
-  const handleLogin = (uid: string) => {
-    // In a real app, this would validate the UID against a database
-    setIsLoggedIn(true);
-    setCustomerName("John Doe"); // This would come from the database
+  const handleLogin = async (sessionToken: string, customerUid: string) => {
+    // Make handleLogin async
+    try {
+      const detailsResponse = await invoke<ApiResponse<Customer>>( // Invoke get_customer_details
+        "get_customer_details",
+        { customerId: customerUid }
+      );
+
+      if (detailsResponse.status === "success") {
+        const customerDetails = detailsResponse.data;
+        if (customerDetails) {
+          login(
+            sessionToken,
+            customerUid,
+            customerDetails.name,
+            customerDetails.virtual_balance
+          );
+        } else {
+          console.error("Customer details missing in response after login.");
+        }
+      } else if (detailsResponse.status === "error") {
+        console.error(
+          "Error fetching customer details:",
+          detailsResponse.message
+        );
+      } else {
+        console.error(
+          "Unexpected response status fetching customer details:",
+          detailsResponse
+        );
+      }
+    } catch (error) {
+      console.error("Error invoking get_customer_details:", error);
+    }
+  };
+
+  const handleLogoutClick = () => {
+    logout(); // Call logout from UserContext
   };
 
   const filteredRestaurants = restaurants.filter((restaurant) => {
@@ -57,19 +89,39 @@ export default function CustomerUI() {
       <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">Welcome, {customerName}</h2>
+            <h2 className="text-lg font-semibold">
+              Welcome, {customerName || "Guest"}
+            </h2>
           </div>
           <div className="flex items-center gap-3">
-            {isLoggedIn ? (
+            {isLoggedIn() ? (
               <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  aria-label="Top up balance"
+                <Dialog
+                  open={isTopUpDialogOpen}
+                  onOpenChange={setIsTopUpDialogOpen}
                 >
-                  <Wallet className="h-5 w-5" />
-                </Button>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full relative"
+                      aria-label="Top up balance"
+                    >
+                      <span className="bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
+                        Rp {virtualBalance || "0.00"}
+                      </span>
+                      <Wallet className="h-5 w-5" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Top Up Virtual Balance</DialogTitle>
+                    </DialogHeader>
+                    <VirtualBalanceForm
+                      onCancel={() => setIsTopUpDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -85,6 +137,9 @@ export default function CustomerUI() {
                   aria-label="Notifications"
                 >
                   <Bell className="h-5 w-5" />
+                </Button>
+                <Button variant="default" onClick={handleLogoutClick}>
+                  Logout
                 </Button>
               </>
             ) : (
@@ -181,24 +236,6 @@ export default function CustomerUI() {
                 </div>
               ))}
             </div>
-            {/* <div className="absolute top-1/2 -left-4 transform -translate-y-1/2 hidden md:block">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-white shadow-md"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-            </div>
-            <div className="absolute top-1/2 -right-4 transform -translate-y-1/2 hidden md:block">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-white shadow-md"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </div> */}
           </div>
         </div>
       </section>
@@ -217,27 +254,18 @@ export default function CustomerUI() {
                 </div>
               ))}
             </div>
-            {/* <div className="absolute top-1/2 -left-4 transform -translate-y-1/2 hidden md:block">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-white shadow-md"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-            </div>
-            <div className="absolute top-1/2 -right-4 transform -translate-y-1/2 hidden md:block">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-white shadow-md"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </div> */}
           </div>
         </div>
       </section>
+      <Toaster richColors position="top-right" />
     </div>
+  );
+}
+
+export default function CustomerUI() {
+  return (
+    <UserProvider>
+      <CustomerUIComponent />
+    </UserProvider>
   );
 }

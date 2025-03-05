@@ -17,18 +17,19 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "./ui/textarea";
 import { Customer } from "@/types";
+import { Save, X } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2).max(50),
-  virtualBalance: z.string().min(1).max(50), // You can adjust this as per your needs
+  virtual_balance: z.string().min(1).max(50), // You can adjust this as per your needs
 });
 
 interface CustomerFormProps {
-  createCustomer: (name: string, virtualBalance: string) => Promise<void>;
+  createCustomer: (name: string, virtual_balance: string) => Promise<void>;
   updateCustomer: (
-    id: string,
+    customer_id: string,
     name: string,
-    virtualBalance: string
+    virtual_balance: string
   ) => Promise<void>;
   editingCustomer: Customer | null;
   setEditingCustomer: (customer: Customer | null) => void;
@@ -44,7 +45,7 @@ export function CustomerForm({
 
   const defaultValues = {
     name: "",
-    virtualBalance: "",
+    virtual_balance: "",
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,7 +58,7 @@ export function CustomerForm({
       setIsUpdate(true);
       form.reset({
         name: editingCustomer.name,
-        virtualBalance: editingCustomer.virtualBalance,
+        virtual_balance: editingCustomer.virtual_balance,
       });
     } else {
       setIsUpdate(false);
@@ -67,34 +68,42 @@ export function CustomerForm({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (isUpdate && editingCustomer) {
-      updateCustomer(editingCustomer.id, values.name, values.virtualBalance);
+      updateCustomer(
+        editingCustomer.customer_id,
+        values.name,
+        values.virtual_balance
+      );
       setEditingCustomer(null);
     } else {
-      createCustomer(values.name, values.virtualBalance);
+      createCustomer(values.name, values.virtual_balance);
     }
 
     form.reset();
   }
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <CardTitle className="text-xl">
-          {isUpdate ? "Edit Customer" : "Create New Customer"}
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl text-center text-primary">
+          {isUpdate ? "Edit Customer Account" : "Create New Customer Account"}
         </CardTitle>
       </CardHeader>
 
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel className="text-foreground/90">Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter customer name" {...field} />
+                    <Input
+                      placeholder="Enter customer name"
+                      {...field}
+                      className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -103,31 +112,44 @@ export function CustomerForm({
 
             <FormField
               control={form.control}
-              name="virtualBalance"
+              name="virtual_balance"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Virtual Balance</FormLabel>
+                  <FormLabel className="text-foreground/90">
+                    Virtual Balance
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter virtual balance" {...field} />
+                    <Input
+                      placeholder="Enter virtual balance"
+                      {...field}
+                      className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex items-center gap-4">
-              <Button type="submit">{isUpdate ? "Update" : "Save"}</Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setEditingCustomer(null);
-                  form.reset(defaultValues);
-                  setIsUpdate(false);
-                }}
-              >
-                Cancel
+            <div className="flex items-center gap-3 pt-2">
+              <Button type="submit" className="flex-1 gap-2">
+                <Save className="h-4 w-4" />
+                {isUpdate ? "Update" : "Save"}
               </Button>
+              {isUpdate && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => {
+                    setEditingCustomer(null);
+                    form.reset(defaultValues);
+                    setIsUpdate(false);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              )}
             </div>
           </form>
         </Form>

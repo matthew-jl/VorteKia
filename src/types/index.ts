@@ -13,7 +13,7 @@ export interface Post {
 }
 
 export interface Customer {
-  id: string; // ID should match the customer schema
+  customer_id: string; // ID should match the customer schema
   name: string;
-  virtualBalance: string;
+  virtual_balance: string;
 }
