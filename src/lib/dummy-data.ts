@@ -1,75 +1,75 @@
-import type { Restaurant, Ride } from "./types";
+import type { Ride } from "./types";
 
-export const restaurants: Restaurant[] = [
-  {
-    id: "r1",
-    name: "Cosmic Café",
-    description:
-      "Futuristic dining with a view of the stars. Enjoy our space-themed dishes and drinks.",
-    cuisine: "International",
-    image: "/placeholder.svg?height=400&width=600",
-    isOpen: true,
-    menu: [
-      {
-        id: "m1",
-        name: "Galaxy Burger",
-        description: "A juicy burger with our special cosmic sauce",
-        price: 12.99,
-      },
-      {
-        id: "m2",
-        name: "Asteroid Fries",
-        description: "Crispy fries with meteor dust seasoning",
-        price: 5.99,
-      },
-    ],
-  },
-  {
-    id: "r2",
-    name: "Neon Noodles",
-    description:
-      "Glowing noodles and vibrant Asian fusion dishes in a cyberpunk setting.",
-    cuisine: "Asian",
-    image: "/placeholder.svg?height=400&width=600",
-    isOpen: true,
-  },
-  {
-    id: "r3",
-    name: "Quantum Bites",
-    description:
-      "Molecular gastronomy at its finest. Experience food in a whole new dimension.",
-    cuisine: "Molecular",
-    image: "/placeholder.svg?height=400&width=600",
-    isOpen: false,
-  },
-  {
-    id: "r4",
-    name: "Retro Diner",
-    description:
-      "Classic American comfort food with a 1950s vibe and modern twist.",
-    cuisine: "American",
-    image: "/placeholder.svg?height=400&width=600",
-    isOpen: true,
-  },
-  {
-    id: "r5",
-    name: "Virtual Veggie",
-    description:
-      "Plant-based delights that taste like the real thing, served in an augmented reality environment.",
-    cuisine: "Vegetarian",
-    image: "/placeholder.svg?height=400&width=600",
-    isOpen: true,
-  },
-  {
-    id: "r6",
-    name: "Hologram Sushi",
-    description:
-      "Traditional Japanese cuisine with a high-tech presentation using holographic displays.",
-    cuisine: "Japanese",
-    image: "/placeholder.svg?height=400&width=600",
-    isOpen: true,
-  },
-];
+// export const restaurants: Restaurant[] = [
+//   {
+//     id: "r1",
+//     name: "Cosmic Café",
+//     description:
+//       "Futuristic dining with a view of the stars. Enjoy our space-themed dishes and drinks.",
+//     cuisine: "International",
+//     image: "/placeholder.svg?height=400&width=600",
+//     isOpen: true,
+//     menu: [
+//       {
+//         id: "m1",
+//         name: "Galaxy Burger",
+//         description: "A juicy burger with our special cosmic sauce",
+//         price: 12.99,
+//       },
+//       {
+//         id: "m2",
+//         name: "Asteroid Fries",
+//         description: "Crispy fries with meteor dust seasoning",
+//         price: 5.99,
+//       },
+//     ],
+//   },
+//   {
+//     id: "r2",
+//     name: "Neon Noodles",
+//     description:
+//       "Glowing noodles and vibrant Asian fusion dishes in a cyberpunk setting.",
+//     cuisine: "Asian",
+//     image: "/placeholder.svg?height=400&width=600",
+//     isOpen: true,
+//   },
+//   {
+//     id: "r3",
+//     name: "Quantum Bites",
+//     description:
+//       "Molecular gastronomy at its finest. Experience food in a whole new dimension.",
+//     cuisine: "Molecular",
+//     image: "/placeholder.svg?height=400&width=600",
+//     isOpen: false,
+//   },
+//   {
+//     id: "r4",
+//     name: "Retro Diner",
+//     description:
+//       "Classic American comfort food with a 1950s vibe and modern twist.",
+//     cuisine: "American",
+//     image: "/placeholder.svg?height=400&width=600",
+//     isOpen: true,
+//   },
+//   {
+//     id: "r5",
+//     name: "Virtual Veggie",
+//     description:
+//       "Plant-based delights that taste like the real thing, served in an augmented reality environment.",
+//     cuisine: "Vegetarian",
+//     image: "/placeholder.svg?height=400&width=600",
+//     isOpen: true,
+//   },
+//   {
+//     id: "r6",
+//     name: "Hologram Sushi",
+//     description:
+//       "Traditional Japanese cuisine with a high-tech presentation using holographic displays.",
+//     cuisine: "Japanese",
+//     image: "/placeholder.svg?height=400&width=600",
+//     isOpen: true,
+//   },
+// ];
 
 export const rides: Ride[] = [
   {

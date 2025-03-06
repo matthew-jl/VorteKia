@@ -1,238 +1,187 @@
-import { useEffect, useState } from "react";
+"use client";
+import StaffHandlerPage from "./staff/staff-handler-page";
+import CustomerHandlerPage from "./staff/customer-handler-page";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ApiResponse, Customer } from "@/types";
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Bell, MessageSquare, ShieldCheck } from "lucide-react";
+import { StaffLoginForm } from "@/components/staff-login-form";
+import { StaffUserProvider, useStaffUser } from "@/context/staff-user-context"; // Import StaffUserProvider and useStaffUser
 import { invoke } from "@tauri-apps/api/core";
-import { CustomerForm } from "@/components/customer-form";
-import { Edit, Trash2 } from "lucide-react";
+import { ApiResponse, Staff } from "@/types";
+import RestaurantHandlerPage from "./staff/restaurant-handler-page";
 
-function CustomerHandlerPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+function StaffUILayout() {
+  const { isLoggedIn, login, logout, staffName, staffRole } = useStaffUser(); // Use StaffUserContext
 
-  // Fetch all customers from the backend
-  async function fetchCustomers() {
+  const handleLogin = async (sessionToken: string, staffEmail: string) => {
     try {
-      const response = await invoke<ApiResponse<Customer[]>>(
-        "view_customer_accounts"
+      const detailsResponse = await invoke<ApiResponse<Staff>>(
+        "get_staff_details_by_email", // Use get_staff_details_by_email command
+        { email: staffEmail } // Pass email to backend
       );
-      setCustomers(response.data || []);
-      console.log(response.data);
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    }
-  }
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  // Create a new customer
-  async function createCustomer(name: string, virtual_balance: string) {
-    try {
-      const response = await invoke<ApiResponse<string>>("save_customer_data", {
-        name,
-        virtualBalance: virtual_balance,
-      });
-
-      if (response.status === "error") {
-        console.error("Error creating customer:", response.message);
-      } else {
-        setCustomers((prevCustomers) => [
-          ...prevCustomers,
-          { customer_id: response.data!, name, virtual_balance },
-        ]);
-        console.log(customers);
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    }
-  }
-
-  // Update an existing customer
-  async function updateCustomer(
-    customer_id: string,
-    name: string,
-    virtual_balance: string
-  ) {
-    try {
-      const response = await invoke<ApiResponse<string>>(
-        "update_customer_data",
-        {
-          customerId: customer_id,
-          name,
-          virtualBalance: virtual_balance,
+      if (detailsResponse.status === "success") {
+        const staffDetails = detailsResponse.data;
+        if (staffDetails) {
+          login(
+            sessionToken,
+            staffDetails.staff_id, // Use staff_id from details
+            staffDetails.name,
+            staffDetails.role
+          );
+        } else {
+          console.error("Staff details missing in response after login.");
+          // Handle error: maybe logout or show error message
         }
-      );
-
-      if (response.status === "error") {
-        console.error("Error updating customer:", response.message);
+      } else if (detailsResponse.status === "error") {
+        console.error("Error fetching staff details:", detailsResponse.message);
+        // Handle error: show error message to user
       } else {
-        setCustomers((prevCustomers) =>
-          prevCustomers.map((customer) =>
-            customer.customer_id === customer_id
-              ? { ...customer, name, virtual_balance }
-              : customer
-          )
+        console.error(
+          "Unexpected response status fetching staff details:",
+          detailsResponse
         );
-        setEditingCustomer(null);
+        // Handle error: generic error message
       }
     } catch (error) {
-      console.error("Unexpected error:", error);
+      console.error("Error invoking get_staff_details_by_email:", error);
+      // Handle error: communication error
     }
-  }
+  };
 
-  // Delete a customer
-  async function deleteCustomer(customer_id: string) {
-    try {
-      const response = await invoke<ApiResponse<string>>(
-        "delete_customer_data",
-        {
-          customerId: customer_id,
-        }
-      );
-
-      if (response.status === "error") {
-        console.error("Error deleting customer:", response.message);
-      } else {
-        setCustomers((prevCustomers) =>
-          prevCustomers.filter(
-            (customer) => customer.customer_id !== customer_id
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    }
-  }
+  const handleLogoutClick = () => {
+    logout();
+  };
 
   return (
-    <div className="relative min-h-screen">
-      {/* Background image with overlay */}
-      <div
-        className="fixed inset-0 bg-cover bg-center z-0"
-        style={{
-          backgroundImage: "url('/images/themeparkbg_2.jpg')",
-        }}
-      >
-        <div className="absolute inset-0 bg-black/70"></div>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-white mb-8 text-center">
-          Customer Management
-        </h1>
-
-        <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">
-          {/* Form Section */}
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
-            <CustomerForm
-              createCustomer={createCustomer}
-              updateCustomer={updateCustomer}
-              editingCustomer={editingCustomer}
-              setEditingCustomer={setEditingCustomer}
-            />
+    <div className="flex flex-col min-h-screen">
+      {/* Sticky Navbar */}
+      <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">
+              {isLoggedIn()
+                ? `Welcome, ${staffName} (${staffRole})`
+                : "Staff UI"}{" "}
+              {/* Display staff name and role when logged in */}
+            </h2>
           </div>
-
-          {/* Table Section */}
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden p-6">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableCaption>VorteKia Customer Accounts</TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">UID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Virtual Balance (IDR)</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customers.map((customer) => (
-                    <TableRow key={customer.customer_id}>
-                      <TableCell className="font-medium">
-                        {customer.customer_id}
-                      </TableCell>
-                      <TableCell>{customer.name}</TableCell>
-                      <TableCell>{customer.virtual_balance}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingCustomer(customer)}
-                            className="h-8 w-8"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you absolutely sure?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the customer and their
-                                  data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    deleteCustomer(customer.customer_id)
-                                  }
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+          <div className="flex items-center gap-3">
+            {isLoggedIn() ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Customer service"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                </Button>
+                <Button variant="default" onClick={handleLogoutClick}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="default">Staff Login</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Staff Login</DialogTitle>
+                  </DialogHeader>
+                  <StaffLoginForm onLogin={handleLogin} />{" "}
+                  {/* Use StaffLoginForm */}
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Main Content Area (you can add staff-specific content below the navbar) */}
+      <main className="container mx-auto px-4 py-8">
+        {isLoggedIn() ? (
+          <div>
+            <h1>Staff Dashboard</h1>
+            {staffRole === "COO" && (
+              <div>
+                <h2>COO Dashboard Section</h2>
+                <StaffHandlerPage />
+              </div>
+            )}
+            {(staffRole === "CustomerServiceManager" ||
+              staffRole === "CustomerServiceStaff") && (
+              <div>
+                <h2>Customer Service Section</h2>
+                <CustomerHandlerPage />
+              </div>
+            )}
+            {staffRole === "FBSupervisor" && (
+              <div>
+                <RestaurantHandlerPage />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Background image with overlay */}
+            <div
+              className="fixed inset-0 bg-cover bg-center z-0"
+              style={{
+                backgroundImage: "url('/images/themeparkbg_2.jpg')",
+              }}
+            >
+              <div className="absolute inset-0 bg-black/70"></div>
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center justify-center h-[70vh] text-center">
+              <div className="bg-background/80 backdrop-blur-md p-8 rounded-lg shadow-lg max-w-2xl w-full">
+                <div className="mb-6 inline-flex p-4 rounded-full bg-primary/10">
+                  <ShieldCheck className="h-12 w-12 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold mb-4">
+                  Staff Access Required
+                </h1>
+                <p className="text-lg mb-8 text-foreground">
+                  Welcome to the VorteKia Theme Park staff portal. This area is
+                  restricted to authorized personnel only. Please log in with
+                  your staff credentials to access management features.
+                </p>
+                <div className="flex flex-col gap-4 items-center">
+                  <p className="text-sm text-foreground">
+                    If you're experiencing login issues, please contact IT
+                    support.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
 
-export default CustomerHandlerPage;
+export default function StaffUI() {
+  return (
+    <StaffUserProvider>
+      <StaffUILayout />
+    </StaffUserProvider>
+  );
+}

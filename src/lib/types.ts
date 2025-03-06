@@ -1,20 +1,20 @@
-export interface Restaurant {
-  id: string;
-  name: string;
-  description: string;
-  cuisine: string;
-  image: string;
-  isOpen: boolean;
-  menu?: MenuItem[];
-}
+// export interface Restaurant {
+//   id: string;
+//   name: string;
+//   description: string;
+//   cuisine: string;
+//   image: string;
+//   isOpen: boolean;
+//   menu?: MenuItem[];
+// }
 
-export interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image?: string;
-}
+// export interface MenuItem {
+//   id: string;
+//   name: string;
+//   description: string;
+//   price: number;
+//   image?: string;
+// }
 
 export interface Ride {
   id: string;

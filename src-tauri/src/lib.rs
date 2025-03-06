@@ -1,4 +1,6 @@
 use anyhow::Result;
+use controllers::menu_item_handler::MenuItemHandler;
+use controllers::restaurant_handler::RestaurantHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
 use entity::post::{self, ActiveModel as PostActiveModel, Entity as Post};
@@ -10,8 +12,8 @@ use std::env;
 use std::{fs::File, io::Read};
 use tauri::{command, Manager, State};
 
-use entity::customer::Model as CustomerModel;
 use crate::controllers::customer_handler::CustomerHandler;
+use controllers::staff_handler::StaffHandler;
 pub mod controllers;
 
 
@@ -295,9 +297,10 @@ async fn get_customer_details(
     CustomerHandler::get_customer_details(&state, customer_id).await
 }
 
+
 // View all customer accounts
 #[tauri::command]
-async fn view_customer_accounts(state: State<'_, AppState>) -> Result<ApiResponse<Vec<CustomerModel>>, String> {
+async fn view_customer_accounts(state: State<'_, AppState>) -> Result<ApiResponse<Vec<entity::customer::Model>>, String> {
     CustomerHandler::view_customer_accounts(&state).await
 }
 
@@ -341,6 +344,173 @@ async fn delete_customer_data(
     CustomerHandler::delete_customer_data(&state, customer_id).await
 }
 
+// Staff related commands
+#[tauri::command]
+async fn staff_login(
+    state: State<'_, AppState>,
+    email: String,
+    password: String,
+) -> Result<ApiResponse<String>, String> {
+    StaffHandler::staff_login(&state, email, password).await
+}
+
+#[tauri::command]
+async fn get_staff_details(
+    state: State<'_, AppState>,
+    staff_id: String,
+) -> Result<ApiResponse<entity::staff::Model>, String> {
+    StaffHandler::get_staff_details(&state, staff_id).await
+}
+
+#[tauri::command]
+async fn get_staff_details_by_email(
+    state: State<'_, AppState>,
+    email: String, 
+)-> Result<ApiResponse<entity::staff::Model>, String> {
+  StaffHandler::get_staff_details_by_email(&state, email).await
+}
+
+#[tauri::command]
+async fn view_staff_accounts(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::staff::Model>>, String> {
+    StaffHandler::view_staff_accounts(&state).await
+}
+
+#[tauri::command]
+async fn save_staff_data(
+    state: State<'_, AppState>,
+    email: String,
+    password: String,
+    name: String,
+    role: String,
+) -> Result<ApiResponse<String>, String> {
+    StaffHandler::save_staff_data(&state, email, password, name, role).await
+}
+
+#[tauri::command]
+async fn update_staff_data(
+    state: State<'_, AppState>,
+    staff_id: String,
+    email: Option<String>,
+    name: Option<String>,
+    role: Option<String>,
+) -> Result<ApiResponse<String>, String> { // Return ApiResponse<String> for consistency
+    StaffHandler::update_staff_data(&state, staff_id, email, name, role).await
+}
+
+#[tauri::command]
+async fn delete_staff_data(
+    state: State<'_, AppState>,
+    staff_id: String,
+) -> Result<String, String> {
+    StaffHandler::delete_staff_data(&state, staff_id).await
+}
+
+// Restaurant related commands
+#[tauri::command]
+async fn view_restaurants(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::restaurant::Model>>, String> {
+    RestaurantHandler::view_restaurants(&state).await
+}
+
+#[tauri::command]
+async fn get_restaurant_details(
+    state: State<'_, AppState>,
+    restaurant_id: String,
+) -> Result<ApiResponse<entity::restaurant::Model>, String> {
+    RestaurantHandler::get_restaurant_details(&state, restaurant_id).await
+}
+
+#[tauri::command]
+async fn save_restaurant_data(
+    state: State<'_, AppState>,
+    name: String,
+    photo: Option<String>,
+    opening_time: String, // Pass opening_time as String
+    closing_time: String, // Pass closing_time as String
+    cuisine_type: String,
+    location: Option<String>,
+    status: String,
+) -> Result<ApiResponse<String>, String> {
+    RestaurantHandler::save_restaurant_data(&state, name, photo, opening_time, closing_time, cuisine_type, location, status).await
+}
+
+#[tauri::command]
+async fn update_restaurant_data(
+    state: State<'_, AppState>,
+    restaurant_id: String,
+    name: Option<String>,
+    photo: Option<Option<String>>, // Match Option<Option<String>> for update
+    opening_time: Option<String>, // Pass optional times as String
+    closing_time: Option<String>, // Pass optional times as String
+    cuisine_type: Option<String>,
+    location: Option<Option<String>>, // Match Option<Option<String>> for location
+    status: Option<String>,
+) -> Result<ApiResponse<String>, String> {
+    RestaurantHandler::update_restaurant_data(&state, restaurant_id, name, photo, opening_time, closing_time, cuisine_type, location, status).await
+}
+
+
+#[tauri::command]
+async fn delete_restaurant_data(
+    state: State<'_, AppState>,
+    restaurant_id: String,
+) -> Result<String, String> {
+    RestaurantHandler::delete_restaurant_data(&state, restaurant_id).await
+}
+
+
+// Menu Item related commands
+#[tauri::command]
+async fn view_menu_items(
+    state: State<'_, AppState>,
+    restaurant_id: Option<String>, // Allow optional restaurant_id for filtering
+) -> Result<ApiResponse<Vec<entity::menu_item::Model>>, String> {
+    MenuItemHandler::view_menu_items(&state, restaurant_id).await
+}
+
+#[tauri::command]
+async fn get_menu_item_details(
+    state: State<'_, AppState>,
+    menu_item_id: String,
+) -> Result<ApiResponse<entity::menu_item::Model>, String> {
+    MenuItemHandler::get_menu_item_details(&state, menu_item_id).await
+}
+
+#[tauri::command]
+async fn save_menu_item_data(
+    state: State<'_, AppState>,
+    photo: Option<String>,
+    name: String,
+    price: String,
+    restaurant_id: String, // Required restaurant_id
+) -> Result<ApiResponse<String>, String> {
+    MenuItemHandler::save_menu_item_data(&state, photo, name, price, restaurant_id).await
+}
+
+#[tauri::command]
+async fn update_menu_item_data(
+    state: State<'_, AppState>,
+    menu_item_id: String,
+    photo: Option<Option<String>>, // Match Option<Option<String>>
+    name: Option<String>,
+    price: Option<String>,
+    restaurant_id: Option<String>, // Allow optional restaurant_id update
+) -> Result<ApiResponse<String>, String> {
+    MenuItemHandler::update_menu_item_data(&state, menu_item_id, photo, name, price, restaurant_id).await
+}
+
+#[tauri::command]
+async fn delete_menu_item_data(
+    state: State<'_, AppState>,
+    menu_item_id: String,
+) -> Result<String, String> {
+    MenuItemHandler::delete_menu_item_data(&state, menu_item_id).await
+}
+
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -374,13 +544,11 @@ pub fn run() {
             delete_post,
             update_post,
             get_ui_name_from_config,
-            customer_login,
-            get_customer_details,
-            view_customer_accounts,
-            save_customer_data,
-            update_customer_data,
-            top_up_virtual_balance,
-            delete_customer_data,
+            customer_login, get_customer_details, view_customer_accounts, save_customer_data, update_customer_data, top_up_virtual_balance, delete_customer_data,
+            staff_login, get_staff_details, get_staff_details_by_email, view_staff_accounts, save_staff_data, update_staff_data, delete_staff_data,
+            view_restaurants, get_restaurant_details, save_restaurant_data, update_restaurant_data, delete_restaurant_data,
+            view_menu_items, get_menu_item_details, save_menu_item_data, update_menu_item_data, delete_menu_item_data,
+
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

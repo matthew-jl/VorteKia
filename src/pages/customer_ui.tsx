@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,10 +15,10 @@ import { Search, Filter, Bell, MessageSquare, Wallet } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
 import { RestaurantCard } from "@/components/restaurant-card";
 import { RideCard } from "@/components/ride-card";
-import { restaurants, rides } from "@/lib/dummy-data";
+import { rides } from "@/lib/dummy-data";
 import { UserProvider, useUser } from "@/context/user-context";
 import { invoke } from "@tauri-apps/api/core";
-import { ApiResponse, Customer } from "@/types";
+import { ApiResponse, Customer, Restaurant } from "@/types";
 import { Toaster } from "@/components/ui/sonner";
 import { VirtualBalanceForm } from "@/components/virtual-balance-form";
 
@@ -28,6 +28,7 @@ function CustomerUIComponent() {
   const { isLoggedIn, login, logout, uid, customerName, virtualBalance } =
     useUser(); // Use UserContext
   const [isTopUpDialogOpen, setIsTopUpDialogOpen] = useState(false);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]); // State to hold
 
   const handleLogin = async (sessionToken: string, customerUid: string) => {
     // Make handleLogin async
@@ -69,18 +70,41 @@ function CustomerUIComponent() {
     logout(); // Call logout from UserContext
   };
 
+  // Fetch restaurants on component mount
+  useEffect(() => {
+    async function loadRestaurants() {
+      try {
+        const response = await invoke<ApiResponse<Restaurant[]>>(
+          "view_restaurants"
+        ); // Fetch restaurants
+        if (response.status === "success" && response.data) {
+          setRestaurants(response.data);
+        } else if (response.status === "error") {
+          console.error("Error fetching restaurants:", response.message);
+          // Handle error: Display error message to user if needed
+        } else {
+          console.error("Unexpected response fetching restaurants:", response);
+        }
+      } catch (error) {
+        console.error("Error invoking view_restaurants:", error);
+        // Handle error: Communication error
+      }
+    }
+    loadRestaurants();
+  }, []); // Empty dependency array to run only once on mount
+
   const filteredRestaurants = restaurants.filter((restaurant) => {
     const matchesSearch = restaurant.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesCuisine =
-      selectedCuisine === "All" || restaurant.cuisine === selectedCuisine;
+      selectedCuisine === "All" || restaurant.cuisine_type === selectedCuisine; // Use cuisine_type from Restaurant interface
     return matchesSearch && matchesCuisine;
   });
 
   const cuisines = [
     "All",
-    ...Array.from(new Set(restaurants.map((r) => r.cuisine))),
+    ...Array.from(new Set(restaurants.map((r) => r.cuisine_type))), // Use cuisine_type from Restaurant interface
   ];
 
   return (
@@ -231,9 +255,12 @@ function CustomerUIComponent() {
           <div className="relative">
             <div className="flex overflow-x-auto gap-6 pb-6 snap-x">
               {filteredRestaurants.map((restaurant) => (
-                <div key={restaurant.id} className="snap-start">
-                  <RestaurantCard restaurant={restaurant} />
-                </div>
+                <>
+                  <div key={restaurant.restaurant_id} className="snap-start">
+                    <RestaurantCard restaurant={restaurant} />{" "}
+                    {/* Render RestaurantCard */}
+                  </div>
+                </>
               ))}
             </div>
           </div>
