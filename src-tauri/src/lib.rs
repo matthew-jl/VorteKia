@@ -1,9 +1,6 @@
 use anyhow::Result;
-use controllers::menu_item_handler::MenuItemHandler;
-use controllers::restaurant_handler::RestaurantHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
-use entity::post::{self, ActiveModel as PostActiveModel, Entity as Post};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, QueryOrder};
 use sea_orm::{Database, DatabaseConnection, EntityTrait};
@@ -12,8 +9,12 @@ use std::env;
 use std::{fs::File, io::Read};
 use tauri::{command, Manager, State};
 
-use crate::controllers::customer_handler::CustomerHandler;
+use controllers::customer_handler::CustomerHandler;
 use controllers::staff_handler::StaffHandler;
+use controllers::menu_item_handler::MenuItemHandler;
+use controllers::restaurant_handler::RestaurantHandler;
+use controllers::ride_handler::RideHandler;
+use controllers::ride_queue_handler::RideQueueHandler;
 pub mod controllers;
 
 
@@ -56,11 +57,11 @@ impl<T: Serialize> ApiResponse<T> {
 }
 
 #[derive(Serialize, Deserialize)]
-struct CachedData<T> {
+pub struct CachedData<T> {
     data: T,
 }
 
-async fn cache_set<T: Serialize>(pool: &RedisPool, key: &str, value: &T, ttl: usize) {
+pub async fn cache_set<T: Serialize>(pool: &RedisPool, key: &str, value: &T, ttl: usize) {
     let mut conn = match pool.get().await {
         Ok(conn) => conn,
         Err(err) => {
@@ -86,7 +87,7 @@ async fn cache_set<T: Serialize>(pool: &RedisPool, key: &str, value: &T, ttl: us
     }
 }
 
-async fn cache_delete(pool: &RedisPool, key: &str) {
+pub async fn cache_delete(pool: &RedisPool, key: &str) {
     let mut conn = match pool.get().await {
         Ok(conn) => conn,
         Err(err) => {
@@ -100,7 +101,7 @@ async fn cache_delete(pool: &RedisPool, key: &str) {
     }
 }
 
-async fn cache_get<T: for<'de> Deserialize<'de>>(pool: &RedisPool, key: &str) -> Option<T> {
+pub async fn cache_get<T: for<'de> Deserialize<'de>>(pool: &RedisPool, key: &str) -> Option<T> {
     let mut conn = match pool.get().await {
         Ok(conn) => conn,
         Err(err) => {
@@ -130,129 +131,6 @@ async fn cache_get<T: for<'de> Deserialize<'de>>(pool: &RedisPool, key: &str) ->
     }
 }
 
-#[command]
-async fn get_all_posts(
-    state: State<'_, AppState>,
-) -> Result<ApiResponse<Vec<post::Model>>, String> {
-    let cache_key = "get_all_posts_cache";
-
-    if let Some(cached_posts) = cache_get::<Vec<post::Model>>(&state.redis_pool, cache_key).await {
-        println!("Cache hit: Returning posts from Redis");
-        return Ok(ApiResponse::success(cached_posts));
-    }
-
-    println!("Cache miss: Querying database");
-    match Post::find()
-        .order_by_asc(post::Column::Id)
-        .all(&state.db)
-        .await
-    {
-        Ok(posts) => {
-            cache_set(&state.redis_pool, cache_key, &posts, 60).await;
-            Ok(ApiResponse::success(posts))
-        }
-        Err(err) => Ok(ApiResponse::error(format!("Database error: {}", err))),
-    }
-}
-
-#[derive(Deserialize)]
-struct DeletePostRequest {
-    id: i32,
-}
-
-#[command]
-async fn delete_post(
-    state: State<'_, AppState>,
-    payload: DeletePostRequest,
-) -> Result<ApiResponse<()>, String> {
-    match Post::delete_by_id(payload.id).exec(&state.db).await {
-        Ok(delete_result) => {
-            if delete_result.rows_affected == 0 {
-                return Ok(ApiResponse::error(format!(
-                    "No post found with ID: {}",
-                    payload.id
-                )));
-            }
-
-            cache_delete(&state.redis_pool, "get_all_posts_cache").await;
-            Ok(ApiResponse::success(()))
-        }
-        Err(err) => Ok(ApiResponse::error(format!(
-            "Failed to delete post: {}",
-            err
-        ))),
-    }
-}
-
-#[derive(Deserialize)]
-struct CreatePostRequest {
-    title: String,
-    text: String,
-}
-
-#[command]
-async fn create_post(
-    state: State<'_, AppState>,
-    payload: CreatePostRequest,
-) -> Result<ApiResponse<post::Model>, String> {
-    let new_post = PostActiveModel {
-        title: Set(payload.title),
-        text: Set(payload.text),
-        ..Default::default()
-    };
-
-    match new_post.insert(&state.db).await {
-        Ok(post) => {
-            cache_delete(&state.redis_pool, "get_all_posts_cache").await;
-            Ok(ApiResponse::success(post))
-        }
-        Err(err) => Ok(ApiResponse::error(format!(
-            "Failed to create post: {}",
-            err
-        ))),
-    }
-}
-
-#[derive(Deserialize)]
-struct UpdatePostRequest {
-    id: i32,
-    title: String,
-    text: String,
-}
-
-#[command]
-async fn update_post(
-    state: State<'_, AppState>,
-    payload: UpdatePostRequest,
-) -> Result<ApiResponse<post::Model>, String> {
-    match Post::find_by_id(payload.id).one(&state.db).await {
-        Ok(Some(existing_post)) => {
-            let mut active_post: PostActiveModel = existing_post.into();
-            active_post.title = Set(payload.title);
-            active_post.text = Set(payload.text);
-
-            match active_post.update(&state.db).await {
-                Ok(updated_post) => {
-                    cache_delete(&state.redis_pool, "get_all_posts_cache").await;
-                    Ok(ApiResponse::success(updated_post))
-                }
-                Err(err) => Ok(ApiResponse::error(format!(
-                    "Failed to update post: {}",
-                    err
-                ))),
-            }
-        }
-        Ok(None) => Ok(ApiResponse::error(format!(
-            "No post found with ID: {}",
-            payload.id
-        ))),
-        Err(err) => Ok(ApiResponse::error(format!(
-            "Database error while updating post: {}",
-            err
-        ))),
-    }
-}
-
 fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
     println!("Current working directory: {:?}", env::current_dir()?);
     let mut file = File::open("config/config.json")?;
@@ -266,7 +144,10 @@ fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
 fn map_ui_id_to_name(ui_id: &str) -> &str {
     match ui_id {
         "RE-001" => "restaurant",
-        "RI-001" => "ride",
+        "RI-000" => "ride/6f860dcf-d7e8-4a09-ad0b-4fbfa783a144", // Kora Kora (Closed)
+        "RI-001" => "ride/bf3d0465-377f-4a36-8fef-f491ddd5591a", // Vortex Odyssey
+        "RI-002" => "ride/a38a0c09-f6c2-4889-8fe8-be78f2cecaf9", // Neon Battle Arena
+        "RI-003" => "ride/be758d9e-5273-4789-a75b-cac22e20a301", // Robo World Pavilion (Pending)
         "SR-001" => "store",
         "ST-001" => "staff",
         "CU-001" => "customer",
@@ -510,6 +391,95 @@ async fn delete_menu_item_data(
     MenuItemHandler::delete_menu_item_data(&state, menu_item_id).await
 }
 
+#[tauri::command]
+async fn view_rides(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::ride::Model>>, String> {
+    RideHandler::view_rides(&state).await
+}
+
+#[tauri::command]
+async fn get_ride_details(
+    state: State<'_, AppState>,
+    ride_id: String,
+) -> Result<ApiResponse<entity::ride::Model>, String> {
+    RideHandler::get_ride_details(&state, ride_id).await
+}
+
+#[tauri::command]
+async fn save_ride_data(
+    state: State<'_, AppState>,
+    status: String,
+    name: String,
+    price: String,
+    location: String,
+    staff_id: String,
+    photo: Option<String>,
+) -> Result<ApiResponse<String>, String> {
+    RideHandler::save_ride_data(&state, status, name, price, location, staff_id, photo).await
+}
+
+#[tauri::command]
+async fn update_ride_data(
+    state: State<'_, AppState>,
+    ride_id: String,
+    status: Option<String>,
+    name: Option<String>,
+    price: Option<String>,
+    location: Option<String>,
+    staff_id: Option<String>,
+    photo: Option<Option<String>>, // Match Option<Option<String>> for nullable update
+) -> Result<ApiResponse<String>, String> {
+    RideHandler::update_ride_data(&state, ride_id, status, name, price, location, staff_id, photo).await
+}
+
+#[tauri::command]
+async fn delete_ride_data(
+    state: State<'_, AppState>,
+    ride_id: String,
+) -> Result<String, String> {
+    RideHandler::delete_ride_data(&state, ride_id).await
+}
+
+#[tauri::command]
+async fn view_ride_queues(
+    state: State<'_, AppState>,
+    ride_id: Option<String>,
+) -> Result<ApiResponse<Vec<entity::ride_queue::Model>>, String> {
+    RideQueueHandler::view_ride_queues(&state, ride_id).await
+}
+
+#[tauri::command]
+async fn save_ride_queue_data(
+    state: State<'_, AppState>,
+    ride_id: String,
+    customer_id: String,
+    queue_position: String, // Receive as String, parse to Decimal in handler
+) -> Result<ApiResponse<String>, String> {
+    let position = queue_position.parse::<rust_decimal::Decimal>()
+        .map_err(|e| format!("Invalid queue position: {}", e))?;
+    RideQueueHandler::save_ride_queue_data(&state, ride_id, customer_id, position).await
+}
+
+#[tauri::command]
+async fn update_queue_position(
+    state: State<'_, AppState>,
+    ride_queue_id: String,
+    queue_position: String, // Receive as String, parse to Decimal in handler
+) -> Result<ApiResponse<String>, String> {
+    let position = queue_position.parse::<rust_decimal::Decimal>()
+        .map_err(|e| format!("Invalid queue position: {}", e))?;
+    RideQueueHandler::update_queue_position(&state, ride_queue_id, position).await
+}
+
+#[tauri::command]
+async fn delete_ride_queue_data(
+    state: State<'_, AppState>,
+    ride_queue_id: String,
+) -> Result<String, String> {
+    RideQueueHandler::delete_ride_queue_data(&state, ride_queue_id).await
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -539,16 +509,13 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            get_all_posts,
-            create_post,
-            delete_post,
-            update_post,
             get_ui_name_from_config,
             customer_login, get_customer_details, view_customer_accounts, save_customer_data, update_customer_data, top_up_virtual_balance, delete_customer_data,
             staff_login, get_staff_details, get_staff_details_by_email, view_staff_accounts, save_staff_data, update_staff_data, delete_staff_data,
             view_restaurants, get_restaurant_details, save_restaurant_data, update_restaurant_data, delete_restaurant_data,
             view_menu_items, get_menu_item_details, save_menu_item_data, update_menu_item_data, delete_menu_item_data,
-
+            view_rides, get_ride_details, save_ride_data, update_ride_data, delete_ride_data,
+            view_ride_queues, save_ride_queue_data, update_queue_position, delete_ride_queue_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

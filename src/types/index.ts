@@ -43,3 +43,21 @@ export interface MenuItem {
   price: string;
   restaurant_id: string;
 }
+
+export interface Ride {
+  ride_id: string;
+  status: string;
+  name: string;
+  price: string;
+  location: string;
+  staff_id: string;
+  photo: string | undefined;
+}
+
+export interface RideQueue {
+  ride_queue_id: string;
+  ride_id: string;
+  joined_at: string; // ISO string from DateTime
+  customer_id: string;
+  queue_position: string; // Decimal as string from backend
+}

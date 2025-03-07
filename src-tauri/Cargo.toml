@@ -37,3 +37,5 @@ deadpool-redis = "0.20.0"
 log = "0.4.26"
 uuid = { version = "1.1", features = ["v4"] }
 bcrypt = "0.15.1"
+rust_decimal = "1.25"
+chrono = "0.4"

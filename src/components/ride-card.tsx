@@ -4,13 +4,15 @@ import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Clock } from "lucide-react";
-import type { Ride } from "@/lib/types";
+import { Ride } from "@/types";
+import { formatRupiah } from "@/util/currencyFormatter";
 
 interface RideCardProps {
   ride: Ride;
+  queueCount: number;
 }
 
-export function RideCard({ ride }: RideCardProps) {
+export function RideCard({ ride, queueCount }: RideCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -22,26 +24,28 @@ export function RideCard({ ride }: RideCardProps) {
       <div className="relative h-[200px]">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${ride.image})` }}
+          style={{
+            backgroundImage: `url(${ride.photo})`,
+          }}
         />
         <div className="absolute top-2 right-2">
           <Badge
             variant={
-              ride.intensity === "High"
+              ride.status === "Closed"
                 ? "destructive"
-                : ride.intensity === "Medium"
+                : ride.status === "Operational"
                 ? "default"
                 : "secondary"
             }
           >
-            {ride.intensity} Intensity
+            {ride.status}
           </Badge>
         </div>
       </div>
       <CardContent className="p-4">
         <h3 className="text-xl font-semibold mb-1">{ride.name}</h3>
         <p className="text-sm text-muted-foreground line-clamp-2">
-          {ride.description}
+          Location: {ride.location}
         </p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
@@ -49,16 +53,18 @@ export function RideCard({ ride }: RideCardProps) {
           <>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{ride.queueCount} in queue</span>
+              <span className="text-sm">{queueCount} in queue</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-sm">${ride.price.toFixed(2)}</span>
+              <span className="text-sm">{formatRupiah(ride.price)}</span>
             </div>
           </>
         ) : (
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{ride.waitTime} min wait</span>
+            <span className="text-sm">
+              {queueCount > 0 ? `${queueCount * 2} min wait` : "No wait"}
+            </span>
           </div>
         )}
       </CardFooter>

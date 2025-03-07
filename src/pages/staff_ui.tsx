@@ -16,8 +16,9 @@ import { StaffUserProvider, useStaffUser } from "@/context/staff-user-context"; 
 import { invoke } from "@tauri-apps/api/core";
 import { ApiResponse, Staff } from "@/types";
 import RestaurantHandlerPage from "./staff/restaurant-handler-page";
+import RideHandlerPage from "./staff/ride-handler-page";
 
-function StaffUILayout() {
+function StaffUIComponent() {
   const { isLoggedIn, login, logout, staffName, staffRole } = useStaffUser(); // Use StaffUserContext
 
   const handleLogin = async (sessionToken: string, staffEmail: string) => {
@@ -68,7 +69,7 @@ function StaffUILayout() {
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold">
               {isLoggedIn()
-                ? `Welcome, ${staffName} (${staffRole})`
+                ? `Welcome to Staff UI, ${staffName} (${staffRole})`
                 : "Staff UI"}{" "}
               {/* Display staff name and role when logged in */}
             </h2>
@@ -118,23 +119,26 @@ function StaffUILayout() {
       <main className="container mx-auto px-4 py-8">
         {isLoggedIn() ? (
           <div>
-            <h1>Staff Dashboard</h1>
+            {/* Staff Dashboard based on role */}
             {staffRole === "COO" && (
               <div>
-                <h2>COO Dashboard Section</h2>
                 <StaffHandlerPage />
               </div>
             )}
             {(staffRole === "CustomerServiceManager" ||
               staffRole === "CustomerServiceStaff") && (
               <div>
-                <h2>Customer Service Section</h2>
                 <CustomerHandlerPage />
               </div>
             )}
             {staffRole === "FBSupervisor" && (
               <div>
                 <RestaurantHandlerPage />
+              </div>
+            )}
+            {staffRole === "RideManager" && (
+              <div>
+                <RideHandlerPage />
               </div>
             )}
           </div>
@@ -181,7 +185,7 @@ function StaffUILayout() {
 export default function StaffUI() {
   return (
     <StaffUserProvider>
-      <StaffUILayout />
+      <StaffUIComponent />
     </StaffUserProvider>
   );
 }

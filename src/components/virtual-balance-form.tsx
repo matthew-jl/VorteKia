@@ -21,6 +21,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { useUser } from "@/context/user-context";
 import { invoke } from "@tauri-apps/api/core";
 import { ApiResponse } from "@/types";
+import { formatRupiah } from "@/util/currencyFormatter";
 
 // Define payment method type
 type PaymentMethod = "gopay" | "ovo" | "virtual-account";
@@ -85,9 +86,10 @@ export function VirtualBalanceForm({ onCancel }: VirtualBalanceFormProps) {
 
         setVirtualBalance(newBalanceStr); // Update balance in UserContext
 
+        const topUpAmountStrFormatted = formatRupiah(topUpAmountStr);
         // Show success message
         toast.success("Top-up Successful", {
-          description: `Added ${topUpAmountStr} to your balance via ${values.paymentMethod}`,
+          description: `Added ${topUpAmountStrFormatted} to your balance via ${values.paymentMethod}`,
         });
 
         // Reset form and close dialog

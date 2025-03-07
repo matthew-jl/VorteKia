@@ -1,9 +1,10 @@
-pub mod post;
 pub mod prelude;
 pub mod customer;
 pub mod staff;
 pub mod restaurant;
 pub mod menu_item;
+pub mod ride;
+pub mod ride_queue;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right

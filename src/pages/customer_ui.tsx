@@ -11,88 +11,78 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Bell, MessageSquare, Wallet } from "lucide-react";
-import { LoginForm } from "@/components/login-form";
+import { Search, Filter } from "lucide-react";
 import { RestaurantCard } from "@/components/restaurant-card";
 import { RideCard } from "@/components/ride-card";
-import { rides } from "@/lib/dummy-data";
-import { UserProvider, useUser } from "@/context/user-context";
+import { UserProvider } from "@/context/user-context";
 import { invoke } from "@tauri-apps/api/core";
-import { ApiResponse, Customer, Restaurant } from "@/types";
+import { ApiResponse, Restaurant, Ride, RideQueue } from "@/types";
 import { Toaster } from "@/components/ui/sonner";
-import { VirtualBalanceForm } from "@/components/virtual-balance-form";
-import { formatRupiah } from "@/util/currencyFormatter";
+import { Navbar } from "@/components/navbar";
 
 function CustomerUIComponent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
-  const { isLoggedIn, login, logout, uid, customerName, virtualBalance } =
-    useUser(); // Use UserContext
-  const [isTopUpDialogOpen, setIsTopUpDialogOpen] = useState(false);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]); // State to hold
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [rideQueueCounts, setRideQueueCounts] = useState<{
+    [rideId: string]: number;
+  }>({});
 
-  const handleLogin = async (sessionToken: string, customerUid: string) => {
-    // Make handleLogin async
-    try {
-      const detailsResponse = await invoke<ApiResponse<Customer>>( // Invoke get_customer_details
-        "get_customer_details",
-        { customerId: customerUid }
-      );
-
-      if (detailsResponse.status === "success") {
-        const customerDetails = detailsResponse.data;
-        if (customerDetails) {
-          login(
-            sessionToken,
-            customerUid,
-            customerDetails.name,
-            customerDetails.virtual_balance
-          );
-        } else {
-          console.error("Customer details missing in response after login.");
-        }
-      } else if (detailsResponse.status === "error") {
-        console.error(
-          "Error fetching customer details:",
-          detailsResponse.message
-        );
-      } else {
-        console.error(
-          "Unexpected response status fetching customer details:",
-          detailsResponse
-        );
-      }
-    } catch (error) {
-      console.error("Error invoking get_customer_details:", error);
-    }
-  };
-
-  const handleLogoutClick = () => {
-    logout(); // Call logout from UserContext
-  };
-
-  // Fetch restaurants on component mount
   useEffect(() => {
-    async function loadRestaurants() {
+    async function loadData() {
+      // Fetch Restaurants
       try {
-        const response = await invoke<ApiResponse<Restaurant[]>>(
+        const restaurantResponse = await invoke<ApiResponse<Restaurant[]>>(
           "view_restaurants"
-        ); // Fetch restaurants
-        if (response.status === "success" && response.data) {
-          setRestaurants(response.data);
-        } else if (response.status === "error") {
-          console.error("Error fetching restaurants:", response.message);
-          // Handle error: Display error message to user if needed
+        );
+        if (
+          restaurantResponse.status === "success" &&
+          restaurantResponse.data
+        ) {
+          setRestaurants(restaurantResponse.data);
         } else {
-          console.error("Unexpected response fetching restaurants:", response);
+          console.error(
+            "Error fetching restaurants:",
+            restaurantResponse.message
+          );
         }
       } catch (error) {
         console.error("Error invoking view_restaurants:", error);
-        // Handle error: Communication error
+      }
+
+      // Fetch Rides
+      try {
+        const rideResponse = await invoke<ApiResponse<Ride[]>>("view_rides");
+        if (rideResponse.status === "success" && rideResponse.data) {
+          setRides(rideResponse.data);
+          // Fetch queue counts for each ride
+          const queueCounts: { [rideId: string]: number } = {};
+          for (const ride of rideResponse.data) {
+            const queueResponse = await invoke<ApiResponse<RideQueue[]>>(
+              "view_ride_queues",
+              { rideId: ride.ride_id }
+            );
+            if (queueResponse.status === "success" && queueResponse.data) {
+              queueCounts[ride.ride_id] = queueResponse.data.length;
+            } else {
+              queueCounts[ride.ride_id] = 0;
+              console.error(
+                `Error fetching queue for ride ${ride.ride_id}:`,
+                queueResponse.message
+              );
+            }
+          }
+          setRideQueueCounts(queueCounts);
+        } else {
+          console.error("Error fetching rides:", rideResponse.message);
+        }
+      } catch (error) {
+        console.error("Error invoking view_rides:", error);
       }
     }
-    loadRestaurants();
-  }, []); // Empty dependency array to run only once on mount
+    loadData();
+  }, []);
 
   const filteredRestaurants = restaurants.filter((restaurant) => {
     const matchesSearch = restaurant.name
@@ -111,78 +101,7 @@ function CustomerUIComponent() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Sticky Navbar */}
-      <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">
-              Welcome, {customerName || "Guest"}
-            </h2>
-          </div>
-          <div className="flex items-center gap-3">
-            {isLoggedIn() ? (
-              <>
-                <Dialog
-                  open={isTopUpDialogOpen}
-                  onOpenChange={setIsTopUpDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="rounded-full relative"
-                      aria-label="Top up balance"
-                    >
-                      <span className="bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
-                        {formatRupiah(virtualBalance || 0)}
-                      </span>
-                      <Wallet className="h-5 w-5" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Top Up Virtual Balance</DialogTitle>
-                    </DialogHeader>
-                    <VirtualBalanceForm
-                      onCancel={() => setIsTopUpDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  aria-label="Customer service"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                </Button>
-                <Button variant="default" onClick={handleLogoutClick}>
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="default">Login</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Login to VorteKia</DialogTitle>
-                  </DialogHeader>
-                  <LoginForm onLogin={handleLogin} />
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar title="Customer" />
 
       {/* Landing Section */}
       <section className="relative h-[60vh]">
@@ -256,12 +175,10 @@ function CustomerUIComponent() {
           <div className="relative">
             <div className="flex overflow-x-auto gap-6 pb-6 snap-x">
               {filteredRestaurants.map((restaurant) => (
-                <>
-                  <div key={restaurant.restaurant_id} className="snap-start">
-                    <RestaurantCard restaurant={restaurant} />{" "}
-                    {/* Render RestaurantCard */}
-                  </div>
-                </>
+                <div key={restaurant.restaurant_id} className="snap-start">
+                  <RestaurantCard restaurant={restaurant} />{" "}
+                  {/* Render RestaurantCard */}
+                </div>
               ))}
             </div>
           </div>
@@ -277,15 +194,17 @@ function CustomerUIComponent() {
           <div className="relative">
             <div className="flex overflow-x-auto gap-6 pb-6 snap-x">
               {rides.map((ride) => (
-                <div key={ride.id} className="snap-start">
-                  <RideCard ride={ride} />
+                <div key={ride.ride_id} className="snap-start">
+                  <RideCard
+                    ride={ride}
+                    queueCount={rideQueueCounts[ride.ride_id] || 0}
+                  />
                 </div>
               ))}
             </div>
           </div>
         </div>
       </section>
-      <Toaster richColors position="top-right" />
     </div>
   );
 }

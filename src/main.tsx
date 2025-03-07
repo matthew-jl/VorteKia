@@ -1,9 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router";
-import RootLayout from "./layouts/root-layout";
 import "./App.css";
-import HomePage from "./pages";
-import AboutPage from "./pages/about";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import RestaurantUI from "./pages/restaurant_ui";
@@ -11,7 +8,6 @@ import RideUI from "./pages/ride_ui";
 import StoreUI from "./pages/store_ui";
 import StaffUI from "./pages/staff_ui";
 import CustomerUI from "./pages/customer_ui";
-import { Button } from "./components/ui/button";
 
 function MainPage() {
   const navigate = useNavigate();
@@ -28,7 +24,7 @@ function MainPage() {
       } catch (error) {
         console.error("Error invoking backend:", error);
       } finally {
-        setLoading(false); // Stop loading after the response is received
+        setLoading(false);
       }
     };
 
@@ -45,13 +41,9 @@ function MainPage() {
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <BrowserRouter>
     <Routes>
-      {/* <Route path="/" element={<RootLayout />}>
-        <Route index element={<HomePage />} />
-        <Route path="about" element={<AboutPage />} />
-      </Route> */}
       <Route path="/" element={<MainPage />} />
       <Route path="/restaurant" element={<RestaurantUI />} />
-      <Route path="/ride" element={<RideUI />} />
+      <Route path="/ride/:rideId" element={<RideUI />} />
       <Route path="/store" element={<StoreUI />} />
       <Route path="/staff" element={<StaffUI />} />
       <Route path="/customer" element={<CustomerUI />} />

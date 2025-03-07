@@ -1,10 +1,12 @@
 pub use sea_orm_migration::prelude::*;
 
-mod m20220101_000001_create_table;
 mod m20250304_152552_create_customer_table;
 mod m20250306_032524_create_staff_table;
 mod m20250306_111959_create_restaurant_table;
 mod m20250306_112015_create_menu_item_table;
+mod m20250307_114130_create_ride_table;
+mod m20250307_114226_create_ride_queue_table;
+
 
 
 
@@ -15,11 +17,12 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
-            Box::new(m20220101_000001_create_table::Migration),
             Box::new(m20250304_152552_create_customer_table::Migration),
             Box::new(m20250306_032524_create_staff_table::Migration),
             Box::new(m20250306_111959_create_restaurant_table::Migration),
             Box::new(m20250306_112015_create_menu_item_table::Migration),
+            Box::new(m20250307_114130_create_ride_table::Migration),
+            Box::new(m20250307_114226_create_ride_queue_table::Migration),
         ]
     }
 }
