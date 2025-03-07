@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ApiResponse, Restaurant } from "@/types"; // Import Restaurant interface
 import {
@@ -25,13 +25,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { RestaurantForm } from "@/components/restaurant-form"; // Import RestaurantForm
-import { Edit, Trash2, Menu } from "lucide-react"; // Import Menu icon
+import { Edit, Trash2, Menu, Utensils } from "lucide-react"; // Import Menu icon
+import MenuItemHandlerPage from "./menu-item-handler-page";
 
 function RestaurantHandlerPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]); // Use Restaurant interface array
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(
     null
   ); // Use Restaurant interface or null
+  const [managingMenuForRestaurantId, setManagingMenuForRestaurantId] =
+    useState<string | null>(null); // State to track restaurant for menu management
+  const menuItemHandlerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (managingMenuForRestaurantId && menuItemHandlerRef.current) {
+      menuItemHandlerRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [managingMenuForRestaurantId]);
 
   // Fetch all restaurants from the backend
   async function fetchRestaurants() {
@@ -294,14 +304,13 @@ function RestaurantHandlerPage() {
                             size="icon"
                             className="h-8 w-8"
                             aria-label="Manage Menu"
-                            onClick={() => {
-                              // Placeholder for Manage Menu button action (React Router navigation later)
-                              console.log(
-                                `Manage menu for restaurant: ${restaurant.restaurant_id}`
-                              );
-                            }}
+                            onClick={() =>
+                              setManagingMenuForRestaurantId(
+                                restaurant.restaurant_id
+                              )
+                            }
                           >
-                            <Menu className="h-4 w-4" /> {/* Menu Icon */}
+                            <Utensils className="h-4 w-4" /> {/* Menu Icon */}
                             <span className="sr-only">Manage Menu</span>
                           </Button>
                         </div>
@@ -314,6 +323,19 @@ function RestaurantHandlerPage() {
           </div>
         </div>
       </div>
+      {/* Conditionally render MenuItemHandlerPage when managingMenuForRestaurantId is set */}
+      {managingMenuForRestaurantId && (
+        <div ref={menuItemHandlerRef}>
+          <MenuItemHandlerPage
+            restaurantId={managingMenuForRestaurantId}
+            restaurantName={
+              restaurants.find(
+                (r) => r.restaurant_id === managingMenuForRestaurantId
+              )?.name || "Unknown"
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

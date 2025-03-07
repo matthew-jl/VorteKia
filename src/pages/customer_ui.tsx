@@ -21,6 +21,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ApiResponse, Customer, Restaurant } from "@/types";
 import { Toaster } from "@/components/ui/sonner";
 import { VirtualBalanceForm } from "@/components/virtual-balance-form";
+import { formatRupiah } from "@/util/currencyFormatter";
 
 function CustomerUIComponent() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,7 +133,7 @@ function CustomerUIComponent() {
                       aria-label="Top up balance"
                     >
                       <span className="bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
-                        Rp {virtualBalance || "0.00"}
+                        {formatRupiah(virtualBalance || 0)}
                       </span>
                       <Wallet className="h-5 w-5" />
                     </Button>
