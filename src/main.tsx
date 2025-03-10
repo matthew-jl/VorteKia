@@ -42,7 +42,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<MainPage />} />
-      <Route path="/restaurant" element={<RestaurantUI />} />
+      <Route path="/restaurant/:restaurantId" element={<RestaurantUI />} />
       <Route path="/ride/:rideId" element={<RideUI />} />
       <Route path="/store" element={<StoreUI />} />
       <Route path="/staff" element={<StaffUI />} />

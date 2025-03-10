@@ -1,13 +1,12 @@
 use anyhow::Result;
+use controllers::order_restaurant_handler::OrderRestaurantHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
-use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, QueryOrder};
-use sea_orm::{Database, DatabaseConnection, EntityTrait};
+use sea_orm::{Database, DatabaseConnection};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::{fs::File, io::Read};
-use tauri::{command, Manager, State};
+use tauri::{Manager, State};
 
 use controllers::customer_handler::CustomerHandler;
 use controllers::staff_handler::StaffHandler;
@@ -143,7 +142,9 @@ fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
 // Mapping function to convert ui_id to ui name
 fn map_ui_id_to_name(ui_id: &str) -> &str {
     match ui_id {
-        "RE-001" => "restaurant",
+        "RE-001" => "restaurant/643a030d-3caa-4162-8a91-54230fca568f", // Paris Bread
+        "RE-002" => "restaurant/c251a835-efda-4487-b481-c655d024c85f", // The Beer Bar
+        "RE-003" => "restaurant/ac0e43b0-f9e1-4a31-9a5f-e33487135776", // Radiator Springs
         "RI-000" => "ride/6f860dcf-d7e8-4a09-ad0b-4fbfa783a144", // Kora Kora (Closed)
         "RI-001" => "ride/bf3d0465-377f-4a36-8fef-f491ddd5591a", // Vortex Odyssey
         "RI-002" => "ride/a38a0c09-f6c2-4889-8fe8-be78f2cecaf9", // Neon Battle Arena
@@ -392,6 +393,51 @@ async fn delete_menu_item_data(
 }
 
 #[tauri::command]
+async fn view_order_restaurants(
+    state: tauri::State<'_, AppState>,
+    restaurant_id: Option<String>,
+) -> Result<ApiResponse<Vec<entity::order_restaurant::Model>>, String> {
+    OrderRestaurantHandler::view_order_restaurants(&state, restaurant_id).await // Updated handler call
+}
+
+#[tauri::command]
+async fn view_order_restaurants_by_customer(
+    state: tauri::State<'_, AppState>,
+    customer_id: String,
+    restaurant_id: String,
+) -> Result<ApiResponse<Vec<entity::order_restaurant::Model>>, String> {
+    OrderRestaurantHandler::view_order_restaurants_by_customer(&state, customer_id, restaurant_id).await
+}
+
+#[tauri::command]
+async fn save_order_restaurant_data(
+    state: tauri::State<'_, AppState>,
+    customer_id: String,
+    restaurant_id: String,
+    menu_item_id: String,
+    quantity: i32,
+) -> Result<ApiResponse<String>, String> {
+    OrderRestaurantHandler::save_order_restaurant_data(&state, customer_id, restaurant_id, menu_item_id, quantity).await // Updated handler call
+}
+
+#[tauri::command]
+async fn update_order_restaurant_status(
+    state: tauri::State<'_, AppState>,
+    order_restaurant_id: String,
+    status: String,
+) -> Result<ApiResponse<String>, String> {
+    OrderRestaurantHandler::update_order_restaurant_status(&state, order_restaurant_id, status).await
+}
+
+#[tauri::command]
+async fn delete_order_restaurant_data(
+    state: tauri::State<'_, AppState>,
+    order_restaurant_id: String,
+) -> Result<ApiResponse<String>, String> {
+    OrderRestaurantHandler::delete_order_restaurant_data(&state, order_restaurant_id).await // Updated handler call
+}
+
+#[tauri::command]
 async fn view_rides(
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<Vec<entity::ride::Model>>, String> {
@@ -514,6 +560,7 @@ pub fn run() {
             staff_login, get_staff_details, get_staff_details_by_email, view_staff_accounts, save_staff_data, update_staff_data, delete_staff_data,
             view_restaurants, get_restaurant_details, save_restaurant_data, update_restaurant_data, delete_restaurant_data,
             view_menu_items, get_menu_item_details, save_menu_item_data, update_menu_item_data, delete_menu_item_data,
+            view_order_restaurants, view_order_restaurants_by_customer, save_order_restaurant_data, update_order_restaurant_status, delete_order_restaurant_data,
             view_rides, get_ride_details, save_ride_data, update_ride_data, delete_ride_data,
             view_ride_queues, save_ride_queue_data, update_queue_position, delete_ride_queue_data,
         ])

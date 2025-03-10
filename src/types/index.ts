@@ -61,3 +61,14 @@ export interface RideQueue {
   customer_id: string;
   queue_position: string; // Decimal as string from backend
 }
+
+export interface OrderRestaurant {
+  // Added OrderRestaurant
+  order_restaurant_id: string;
+  customer_id: string;
+  restaurant_id: string;
+  menu_item_id: string;
+  quantity: number; // Use number, not string
+  timestamp: string; // ISO 8601 string
+  status: string;
+}

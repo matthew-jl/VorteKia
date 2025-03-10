@@ -3,6 +3,7 @@ pub mod customer;
 pub mod staff;
 pub mod restaurant;
 pub mod menu_item;
+pub mod order_restaurant;
 pub mod ride;
 pub mod ride_queue;
 
