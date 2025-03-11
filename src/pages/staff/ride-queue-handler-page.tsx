@@ -251,7 +251,7 @@ function RideQueueHandlerPage({ rideId, rideName }: RideQueueHandlerPageProps) {
     <div className="relative min-h-screen">
       <div className="relative z-10 container mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-white mb-8 text-center">
-          Ride Queue Management - Ride: {rideName}
+          Ride Queue Management - {rideName}
         </h1>
 
         <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">

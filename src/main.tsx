@@ -8,6 +8,8 @@ import RideUI from "./pages/ride_ui";
 import StoreUI from "./pages/store_ui";
 import StaffUI from "./pages/staff_ui";
 import CustomerUI from "./pages/customer_ui";
+import RestaurantUIStaff from "./pages/restaurant_ui_staff";
+import RideUIStaff from "./pages/ride_ui_staff";
 
 function MainPage() {
   const navigate = useNavigate();
@@ -43,7 +45,12 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <Routes>
       <Route path="/" element={<MainPage />} />
       <Route path="/restaurant/:restaurantId" element={<RestaurantUI />} />
+      <Route
+        path="/restaurant/:restaurantId/staff"
+        element={<RestaurantUIStaff />}
+      />
       <Route path="/ride/:rideId" element={<RideUI />} />
+      <Route path="/ride/:rideId/staff" element={<RideUIStaff />} />
       <Route path="/store" element={<StoreUI />} />
       <Route path="/staff" element={<StaffUI />} />
       <Route path="/customer" element={<CustomerUI />} />

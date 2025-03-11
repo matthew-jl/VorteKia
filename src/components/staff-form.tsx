@@ -34,7 +34,6 @@ const roleOptions = [
   "RideManager",
   "MaintenanceStaff",
   "MaintenanceManager",
-  "ConsumptionStaff",
   "FBSupervisor",
   "Chef",
   "Waiter",

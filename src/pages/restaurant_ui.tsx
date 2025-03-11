@@ -1,4 +1,3 @@
-// src/pages/RestaurantUI.tsx
 "use client";
 
 import { useEffect, useState } from "react";

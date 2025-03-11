@@ -143,12 +143,19 @@ fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
 fn map_ui_id_to_name(ui_id: &str) -> &str {
     match ui_id {
         "RE-001" => "restaurant/643a030d-3caa-4162-8a91-54230fca568f", // Paris Bread
+        "ST-RE-001" => "restaurant/643a030d-3caa-4162-8a91-54230fca568f/staff",
         "RE-002" => "restaurant/c251a835-efda-4487-b481-c655d024c85f", // The Beer Bar
+        "ST-RE-002" => "restaurant/c251a835-efda-4487-b481-c655d024c85f/staff",
         "RE-003" => "restaurant/ac0e43b0-f9e1-4a31-9a5f-e33487135776", // Radiator Springs
+        "ST-RE-003" => "restaurant/ac0e43b0-f9e1-4a31-9a5f-e33487135776/staff",
         "RI-000" => "ride/6f860dcf-d7e8-4a09-ad0b-4fbfa783a144", // Kora Kora (Closed)
+        "ST-RI-000" => "ride/6f860dcf-d7e8-4a09-ad0b-4fbfa783a144/staff", // Kora Kora (Closed)
         "RI-001" => "ride/bf3d0465-377f-4a36-8fef-f491ddd5591a", // Vortex Odyssey
+        "ST-RI-001" => "ride/bf3d0465-377f-4a36-8fef-f491ddd5591a/staff", // Vortex Odyssey
         "RI-002" => "ride/a38a0c09-f6c2-4889-8fe8-be78f2cecaf9", // Neon Battle Arena
+        "ST-RI-002" => "ride/a38a0c09-f6c2-4889-8fe8-be78f2cecaf9/staff", // Neon Battle Arena
         "RI-003" => "ride/be758d9e-5273-4789-a75b-cac22e20a301", // Robo World Pavilion (Pending)
+        "ST-RI-003" => "ride/be758d9e-5273-4789-a75b-cac22e20a301/staff", // Robo World Pavilion (Pending)
         "SR-001" => "store",
         "ST-001" => "staff",
         "CU-001" => "customer",
