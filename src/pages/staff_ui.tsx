@@ -1,12 +1,12 @@
 "use client";
 import StaffHandlerPage from "./staff/staff-handler-page";
 import CustomerHandlerPage from "./staff/customer-handler-page";
-import { ShieldCheck } from "lucide-react";
 import { StaffUserProvider, useStaffUser } from "@/context/staff-user-context"; // Import StaffUserProvider and useStaffUser
 import RestaurantHandlerPage from "./staff/restaurant-handler-page";
 import RideHandlerPage from "./staff/ride-handler-page";
 import { StaffNavbar } from "@/components/staff-navbar";
 import { AccessRequiredScreen } from "@/components/access-required-screen";
+import StoreHandlerPage from "./staff/store-handler-page";
 
 function StaffUIComponent() {
   const { isLoggedIn, staffRole } = useStaffUser();
@@ -39,6 +39,11 @@ function StaffUIComponent() {
             {staffRole === "RideManager" && (
               <div>
                 <RideHandlerPage />
+              </div>
+            )}
+            {staffRole === "RetailManager" && (
+              <div>
+                <StoreHandlerPage />
               </div>
             )}
           </div>

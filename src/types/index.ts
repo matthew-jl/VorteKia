@@ -68,7 +68,35 @@ export interface OrderRestaurant {
   customer_id: string;
   restaurant_id: string;
   menu_item_id: string;
-  quantity: number; // Use number, not string
+  quantity: number;
   timestamp: string; // ISO 8601 string
   status: string;
+}
+
+export interface Store {
+  store_id: string;
+  name: string;
+  photo: string | undefined;
+  opening_time: string; // ISO 8601 time string
+  closing_time: string; // ISO 8601 time string
+  location: string | undefined;
+  status: string;
+}
+
+export interface Souvenir {
+  souvenir_id: string;
+  name: string;
+  photo: string | undefined;
+  price: string;
+  stock: number;
+  store_id: string;
+}
+
+export interface OrderSouvenir {
+  order_souvenir_id: string;
+  customer_id: string;
+  store_id: string;
+  souvenir_id: string;
+  quantity: number;
+  timestamp: string;
 }

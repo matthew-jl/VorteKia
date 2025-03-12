@@ -1,11 +1,9 @@
-// src/pages/restaurant_ui_staff.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { StaffNavbar } from "@/components/staff-navbar"; // Corrected import
 import { StaffUserProvider, useStaffUser } from "@/context/staff-user-context";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -32,17 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Loader2,
-  Ban,
-  Search,
-  Clock,
-  CheckCircle2,
-  ChefHat,
-  Coffee,
-  AlertCircle,
-  ShieldCheck,
-} from "lucide-react";
+import { Search, Clock, CheckCircle2, ChefHat, Coffee } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Restaurant, OrderRestaurant, MenuItem, Customer } from "@/types"; // Corrected import
 import { invoke } from "@tauri-apps/api/core";

@@ -5,3 +5,6 @@ pub mod menu_item_handler;
 pub mod order_restaurant_handler;
 pub mod ride_handler;
 pub mod ride_queue_handler;
+pub mod store_handler;
+pub mod souvenir_handler;
+pub mod order_souvenir_handler;
