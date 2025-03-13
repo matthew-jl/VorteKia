@@ -272,6 +272,13 @@ async fn view_staff_accounts(
 }
 
 #[tauri::command]
+async fn view_ride_staffs( // New command
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::staff::Model>>, String> {
+    StaffHandler::view_ride_staffs(&state).await // Call the new handler function
+}
+
+#[tauri::command]
 async fn save_staff_data(
     state: State<'_, AppState>,
     email: String,
@@ -714,19 +721,13 @@ pub fn run() {
 
             app.manage(AppState { db, redis_pool });
 
-            match app.handle().emit("app-setup-complete", ()) { // Emit event with empty payload
-                Ok(_) => println!("App setup complete event emitted."),
-                Err(e) => eprintln!("Failed to emit app-setup-complete event: {}", e),
-            }
-
-
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_ui_name_from_config,
             customer_login, get_customer_details, view_customer_accounts, save_customer_data, update_customer_data, top_up_virtual_balance, delete_customer_data,
-            staff_login, get_staff_details, get_staff_details_by_email, view_staff_accounts, save_staff_data, update_staff_data, delete_staff_data,
+            staff_login, get_staff_details, get_staff_details_by_email, view_staff_accounts, view_ride_staffs, save_staff_data, update_staff_data, delete_staff_data,
             view_restaurants, get_restaurant_details, save_restaurant_data, update_restaurant_data, delete_restaurant_data,
             view_menu_items, get_menu_item_details, save_menu_item_data, update_menu_item_data, delete_menu_item_data,
             view_order_restaurants, view_order_restaurants_by_customer, save_order_restaurant_data, update_order_restaurant_status, delete_order_restaurant_data,

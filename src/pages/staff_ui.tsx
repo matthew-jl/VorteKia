@@ -16,7 +16,7 @@ function StaffUIComponent() {
       <StaffNavbar />
 
       {/* Main Content Area (you can add staff-specific content below the navbar) */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1">
         {isLoggedIn() ? (
           <div>
             {/* Staff Dashboard based on role */}

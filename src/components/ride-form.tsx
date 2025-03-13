@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Ride } from "@/types"; // Import Ride interface
+import { ApiResponse, Ride, Staff } from "@/types"; // Import Ride interface
 import { Save, X } from "lucide-react";
 import {
   Select,
@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { invoke } from "@tauri-apps/api/core";
 
 const formSchema = z.object({
   status: z.string().min(1, { message: "Status is required." }),
@@ -71,6 +72,7 @@ export function RideForm({
     "/images/rides/ride2.jpg",
     "/images/rides/ride3.jpg",
   ]; // Example image options
+  const [rideStaffList, setRideStaffList] = useState<Staff[]>([]);
 
   const defaultValues = {
     status: "Operational",
@@ -85,6 +87,23 @@ export function RideForm({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+
+  useEffect(() => {
+    const fetchRideStaff = async () => {
+      try {
+        const response = await invoke<ApiResponse<Staff[]>>("view_ride_staffs"); // Call new command
+        if (response.status === "success" && response.data) {
+          setRideStaffList(response.data);
+        } else {
+          console.error("Failed to fetch Ride Staff:", response.message);
+        }
+      } catch (error) {
+        console.error("Error fetching Ride Staff:", error);
+      }
+    };
+
+    fetchRideStaff();
+  }, []);
 
   useEffect(() => {
     if (editingRide) {
@@ -145,14 +164,22 @@ export function RideForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-foreground/90">Status</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter status (e.g., Operational, Closed)"
-                      {...field}
-                      className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary"
-                    />
-                  </FormControl>
-                  <FormMessage />
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary">
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Operational">Operational</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                    </SelectContent>
+                    <FormMessage />
+                  </Select>
                 </FormItem>
               )}
             />
@@ -216,14 +243,30 @@ export function RideForm({
               name="staff_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground/90">Staff ID</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter staff ID"
-                      {...field}
-                      className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary"
-                    />
-                  </FormControl>
+                  <FormLabel className="text-foreground/90">
+                    Ride Staff
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary">
+                        <SelectValue placeholder="Select Ride Staff" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {rideStaffList.map(
+                        (
+                          staff // Map over rideStaffList
+                        ) => (
+                          <SelectItem
+                            key={staff.staff_id}
+                            value={staff.staff_id}
+                          >
+                            {staff.name}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ApiResponse, Ride } from "@/types"; // Import Ride interface
+import { ApiResponse, Ride, Staff } from "@/types"; // Import Ride interface
 import {
   Table,
   TableBody,
@@ -35,6 +35,9 @@ function RideHandlerPage() {
     string | null
   >(null); // State for queue management
   const rideQueueHandlerRef = useRef<HTMLDivElement>(null);
+  const [staffNames, setStaffNames] = useState<{ [staffId: string]: string }>(
+    {}
+  );
 
   useEffect(() => {
     if (managingQueueForRideId && rideQueueHandlerRef.current) {
@@ -53,9 +56,46 @@ function RideHandlerPage() {
     }
   }
 
+  async function fetchStaffName(staffId: string) {
+    // Fetch staff name by ID
+    if (!staffNames[staffId]) {
+      // Check if name is already fetched
+      try {
+        const response = await invoke<ApiResponse<Staff>>("get_staff_details", {
+          staffId,
+        });
+        if (response.status === "success" && response.data) {
+          setStaffNames((prevNames) => ({
+            ...prevNames,
+            [staffId]: response.data!.name,
+          }));
+        } else {
+          console.error("Error fetching staff name:", response.message);
+          setStaffNames((prevNames) => ({
+            ...prevNames,
+            [staffId]: "Unknown Staff",
+          })); // Fallback name
+        }
+      } catch (error) {
+        console.error("Error invoking staff details:", error);
+        setStaffNames((prevNames) => ({
+          ...prevNames,
+          [staffId]: "Unknown Staff",
+        })); // Fallback name on error
+      }
+    }
+  }
+
   useEffect(() => {
     fetchRides();
   }, []);
+
+  useEffect(() => {
+    rides.forEach((ride) => {
+      // Fetch staff names for each ride
+      fetchStaffName(ride.staff_id);
+    });
+  }, [rides]);
 
   // Create a new ride
   async function createRide(
@@ -191,7 +231,7 @@ function RideHandlerPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Staff ID</TableHead>
+                    <TableHead>Staff Name</TableHead>
                     <TableHead>Photo</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -206,7 +246,9 @@ function RideHandlerPage() {
                       <TableCell>{ride.status}</TableCell>
                       <TableCell>{ride.price}</TableCell>
                       <TableCell>{ride.location}</TableCell>
-                      <TableCell>{ride.staff_id}</TableCell>
+                      <TableCell>
+                        {staffNames[ride.staff_id] || "Loading..."}
+                      </TableCell>
                       <TableCell>
                         {ride.photo && (
                           <img

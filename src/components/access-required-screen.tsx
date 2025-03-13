@@ -19,7 +19,7 @@ export function AccessRequiredScreen({
   navbar, // Destructure navbar prop
 }: AccessRequiredScreenProps) {
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-full relative">
       {/* Background image with overlay */}
       <div
         className="fixed inset-0 bg-cover bg-center z-0"
