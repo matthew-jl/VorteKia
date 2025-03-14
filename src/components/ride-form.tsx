@@ -67,12 +67,13 @@ export function RideForm({
   setEditingRide,
 }: RideFormProps) {
   const [isUpdate, setIsUpdate] = useState(false);
-  const imageOptions = [
-    "/images/rides/ride1.jpg",
-    "/images/rides/ride2.jpg",
-    "/images/rides/ride3.jpg",
-  ]; // Example image options
+  // const imageOptions = [
+  //   "/images/rides/ride1.jpg",
+  //   "/images/rides/ride2.jpg",
+  //   "/images/rides/ride3.jpg",
+  // ]; // Example image options
   const [rideStaffList, setRideStaffList] = useState<Staff[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
 
   const defaultValues = {
     status: "Operational",
@@ -116,11 +117,37 @@ export function RideForm({
         staff_id: editingRide.staff_id,
         photo: editingRide.photo || "", // Handle null photo
       });
+      setPhotoUrl(editingRide.photo);
     } else {
       setIsUpdate(false);
       form.reset(defaultValues);
+      setPhotoUrl(undefined);
     }
   }, [editingRide, form]);
+
+  // Cloudinary upload handler
+  const openUploadWidget = () => {
+    window.cloudinary.openUploadWidget(
+      {
+        cloudName: "dbllc6nd9", // Replace with your Cloudinary cloud name
+        uploadPreset: "vortekia_app_uploads", // Single preset for the app
+        folder: "rides", // Organize in 'rides' folder
+        sources: ["local"],
+        multiple: false,
+        cropping: true, // Optional: allow cropping
+      },
+      (error, result) => {
+        if (!error && result && result.event === "success") {
+          const url = result.info.secure_url;
+          setPhotoUrl(url);
+          form.setValue("photo", url); // Update form field
+          console.log("Uploaded photo URL:", url);
+        } else if (error) {
+          console.error("Upload error:", error);
+        }
+      }
+    );
+  };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (isUpdate && editingRide) {
@@ -145,6 +172,7 @@ export function RideForm({
       );
     }
     form.reset();
+    setPhotoUrl(undefined);
   }
 
   return (
@@ -278,23 +306,37 @@ export function RideForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-foreground/90">Photo</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value ?? undefined}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary">
-                        <SelectValue placeholder="Choose an image (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {imageOptions.map((imagePath) => (
-                        <SelectItem key={imagePath} value={imagePath}>
-                          {imagePath}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Button
+                        type="button"
+                        onClick={openUploadWidget}
+                        className="w-full bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 text-primary/50"
+                      >
+                        Upload Photo
+                      </Button>
+                      {photoUrl && (
+                        <div>
+                          <img
+                            src={photoUrl}
+                            alt="Ride Preview"
+                            className="max-w-[100px] max-h-[100px] mt-2"
+                          />
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => {
+                              setPhotoUrl(undefined);
+                              form.setValue("photo", "");
+                            }}
+                            className="text-destructive"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
