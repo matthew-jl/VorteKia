@@ -1,4 +1,5 @@
 use anyhow::Result;
+use controllers::lost_and_found_items_log_handler::LostAndFoundItemsLogHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
 use sea_orm::{Database, DatabaseConnection};
@@ -696,6 +697,73 @@ async fn delete_order_souvenir_data(
     OrderSouvenirHandler::delete_order_souvenir_data(&state, order_souvenir_id).await
 }
 
+// Tauri commands for LostAndFoundItemsLogHandler
+#[tauri::command]
+async fn view_logs(state: State<'_, AppState>) -> Result<ApiResponse<Vec<entity::lost_and_found_items_log::Model>>, String> {
+    LostAndFoundItemsLogHandler::view_logs(&state).await
+}
+
+#[tauri::command]
+async fn save_log_data(
+    state: State<'_, AppState>,
+    image: Option<String>,
+    name: String,
+    r#type: String,
+    color: String,
+    last_seen_location: Option<String>,
+    finder: Option<String>,
+    owner: Option<String>,
+    found_location: Option<String>,
+    status: String,
+) -> Result<ApiResponse<String>, String> {
+    LostAndFoundItemsLogHandler::save_log_data(
+        &state,
+        image,
+        name,
+        r#type,
+        color,
+        last_seen_location,
+        finder,
+        owner,
+        found_location,
+        status,
+    ).await
+}
+
+#[tauri::command]
+async fn update_log_data(
+    state: State<'_, AppState>,
+    log_id: String,
+    image: Option<Option<String>>,
+    name: Option<String>,
+    r#type: Option<String>,
+    color: Option<String>,
+    last_seen_location: Option<Option<String>>,
+    finder: Option<Option<String>>,
+    owner: Option<Option<String>>,
+    found_location: Option<Option<String>>,
+    status: Option<String>,
+) -> Result<ApiResponse<String>, String> {
+    LostAndFoundItemsLogHandler::update_log_data(
+        &state,
+        log_id,
+        image,
+        name,
+        r#type,
+        color,
+        last_seen_location,
+        finder,
+        owner,
+        found_location,
+        status,
+    ).await
+}
+
+#[tauri::command]
+async fn delete_log_data(state: State<'_, AppState>, log_id: String) -> Result<String, String> {
+    LostAndFoundItemsLogHandler::delete_log_data(&state, log_id).await
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -736,6 +804,7 @@ pub fn run() {
             view_stores, get_store_details, save_store_data, update_store_data, delete_store_data,
             view_souvenirs, get_souvenir_details, save_souvenir_data, update_souvenir_data, update_souvenir_stock, delete_souvenir_data,
             view_order_souvenirs, view_order_souvenirs_by_customer, get_order_souvenir_details, save_order_souvenir_data, delete_order_souvenir_data,
+            view_logs, save_log_data, update_log_data, delete_log_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

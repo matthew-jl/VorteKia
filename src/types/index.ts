@@ -100,3 +100,17 @@ export interface OrderSouvenir {
   quantity: number;
   timestamp: string;
 }
+
+export interface LostAndFoundItemsLog {
+  log_id: string;
+  image: string | undefined;
+  name: string;
+  type: string;
+  color: string;
+  last_seen_location: string | undefined;
+  finder: string | undefined;
+  owner: string | undefined;
+  found_location: string | undefined;
+  timestamp: string;
+  status: string;
+}

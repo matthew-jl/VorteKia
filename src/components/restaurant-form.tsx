@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Import Select for image picker
+import { CloudinaryUploader } from "./cloudinary-uploader";
 
 const formSchema = z.object({
   name: z
@@ -72,11 +73,12 @@ export function RestaurantForm({
   setEditingRestaurant,
 }: RestaurantFormProps) {
   const [isUpdate, setIsUpdate] = useState(false);
-  const imageOptions = [
-    "/images/restaurants/restaurant1.jpg",
-    "/images/restaurants/restaurant2.jpg",
-    "/images/restaurants/restaurant3.jpg",
-  ]; // Example image options
+  // const imageOptions = [
+  //   "/images/restaurants/restaurant1.jpg",
+  //   "/images/restaurants/restaurant2.jpg",
+  //   "/images/restaurants/restaurant3.jpg",
+  // ]; // Example image options
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
 
   const defaultValues = {
     name: "",
@@ -105,9 +107,11 @@ export function RestaurantForm({
         location: editingRestaurant.location || "", // Handle null location
         photo: editingRestaurant.photo || "", // Handle null photo
       });
+      setPhotoUrl(editingRestaurant.photo);
     } else {
       setIsUpdate(false);
       form.reset(defaultValues);
+      setPhotoUrl(undefined);
     }
   }, [editingRestaurant, form]);
 
@@ -137,6 +141,7 @@ export function RestaurantForm({
     }
 
     form.reset();
+    setPhotoUrl(undefined);
   }
 
   return (
@@ -271,27 +276,17 @@ export function RestaurantForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-foreground/90">Photo</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value ?? undefined}
-                  >
-                    {" "}
-                    {/* Use Select for image picker */}
-                    <FormControl>
-                      <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary">
-                        <SelectValue placeholder="Choose an image (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {imageOptions.map((imagePath) => (
-                        <SelectItem key={imagePath} value={imagePath}>
-                          {imagePath}
-                        </SelectItem>
-                      ))}
-                      {/* <SelectItem value="">No Photo</SelectItem>{" "} */}
-                      {/* Option to remove photo */}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <CloudinaryUploader
+                      imageUrl={photoUrl}
+                      onImageChange={(url) => {
+                        setPhotoUrl(url);
+                        form.setValue("photo", url || "");
+                      }}
+                      folder="restaurants"
+                      aspectRatio={16 / 9}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

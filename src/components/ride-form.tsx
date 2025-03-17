@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { invoke } from "@tauri-apps/api/core";
+import { CloudinaryUploader } from "./cloudinary-uploader";
 
 const formSchema = z.object({
   status: z.string().min(1, { message: "Status is required." }),
@@ -67,11 +68,6 @@ export function RideForm({
   setEditingRide,
 }: RideFormProps) {
   const [isUpdate, setIsUpdate] = useState(false);
-  // const imageOptions = [
-  //   "/images/rides/ride1.jpg",
-  //   "/images/rides/ride2.jpg",
-  //   "/images/rides/ride3.jpg",
-  // ]; // Example image options
   const [rideStaffList, setRideStaffList] = useState<Staff[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
 
@@ -125,32 +121,9 @@ export function RideForm({
     }
   }, [editingRide, form]);
 
-  // Cloudinary upload handler
-  const openUploadWidget = () => {
-    window.cloudinary.openUploadWidget(
-      {
-        cloudName: "dbllc6nd9", // Replace with your Cloudinary cloud name
-        uploadPreset: "vortekia_app_uploads", // Single preset for the app
-        folder: "rides", // Organize in 'rides' folder
-        sources: ["local"],
-        multiple: false,
-        cropping: true, // Optional: allow cropping
-      },
-      (error, result) => {
-        if (!error && result && result.event === "success") {
-          const url = result.info.secure_url;
-          setPhotoUrl(url);
-          form.setValue("photo", url); // Update form field
-          console.log("Uploaded photo URL:", url);
-        } else if (error) {
-          console.error("Upload error:", error);
-        }
-      }
-    );
-  };
-
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (isUpdate && editingRide) {
+      console.log(typeof values.photo);
       updateRide(
         editingRide.ride_id,
         values.status,
@@ -307,35 +280,14 @@ export function RideForm({
                 <FormItem>
                   <FormLabel className="text-foreground/90">Photo</FormLabel>
                   <FormControl>
-                    <div className="space-y-2">
-                      <Button
-                        type="button"
-                        onClick={openUploadWidget}
-                        className="w-full bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-primary/10 text-primary/50"
-                      >
-                        Upload Photo
-                      </Button>
-                      {photoUrl && (
-                        <div>
-                          <img
-                            src={photoUrl}
-                            alt="Ride Preview"
-                            className="max-w-[100px] max-h-[100px] mt-2"
-                          />
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => {
-                              setPhotoUrl(undefined);
-                              form.setValue("photo", "");
-                            }}
-                            className="text-destructive"
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    <CloudinaryUploader
+                      imageUrl={photoUrl}
+                      onImageChange={(url) => {
+                        setPhotoUrl(url);
+                        form.setValue("photo", url || "");
+                      }}
+                      folder="rides"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

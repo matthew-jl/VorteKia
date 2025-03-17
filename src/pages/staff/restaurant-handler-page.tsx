@@ -126,7 +126,7 @@ function RestaurantHandlerPage() {
           // Invoke update_restaurant_data
           restaurantId: restaurant_id, // Backend expects restaurantId
           name,
-          photo: photo === "" ? null : photo, // Handle empty string for photo to null
+          photo: photo,
           openingTime: opening_time,
           closingTime: closing_time,
           cuisineType: cuisine_type,

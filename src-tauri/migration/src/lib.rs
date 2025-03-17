@@ -10,6 +10,8 @@ mod m20250310_151947_create_order_restaurant_table;
 mod m20250312_143002_create_store_table;
 mod m20250312_143009_create_souvenir_table;
 mod m20250312_143018_create_order_souvenir_table;
+mod m20250317_105552_create_lost_and_found_items_log_table;
+
 
 
 pub struct Migrator;
@@ -28,6 +30,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250312_143002_create_store_table::Migration),
             Box::new(m20250312_143009_create_souvenir_table::Migration),
             Box::new(m20250312_143018_create_order_souvenir_table::Migration),
+            Box::new(m20250317_105552_create_lost_and_found_items_log_table::Migration),
         ]
     }
 }

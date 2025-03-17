@@ -7,6 +7,7 @@ import RideHandlerPage from "./staff/ride-handler-page";
 import { StaffNavbar } from "@/components/staff-navbar";
 import { AccessRequiredScreen } from "@/components/access-required-screen";
 import StoreHandlerPage from "./staff/store-handler-page";
+import LostAndFoundItemsLogHandlerPage from "./staff/lost-and-found-items-log-handler-page";
 
 function StaffUIComponent() {
   const { isLoggedIn, staffRole } = useStaffUser();
@@ -44,6 +45,11 @@ function StaffUIComponent() {
             {staffRole === "RetailManager" && (
               <div>
                 <StoreHandlerPage />
+              </div>
+            )}
+            {staffRole === "LostAndFoundStaff" && (
+              <div>
+                <LostAndFoundItemsLogHandlerPage />
               </div>
             )}
           </div>

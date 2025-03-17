@@ -8,3 +8,4 @@ pub mod ride_queue_handler;
 pub mod store_handler;
 pub mod souvenir_handler;
 pub mod order_souvenir_handler;
+pub mod lost_and_found_items_log_handler;

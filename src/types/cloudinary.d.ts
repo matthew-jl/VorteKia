@@ -11,7 +11,6 @@ export interface Cloudinary {
     },
     callback: (error: any, result: any) => void
   ) => void;
-  // Add other Cloudinary methods if needed
 }
 
 declare global {

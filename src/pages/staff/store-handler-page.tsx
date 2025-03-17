@@ -106,7 +106,7 @@ function StoreHandlerPage() {
       const response = await invoke<ApiResponse<string>>("update_store_data", {
         storeId: store_id,
         name,
-        photo: photo === "" ? null : photo,
+        photo: photo,
         openingTime: opening_time,
         closingTime: closing_time,
         location: location === "" ? null : location,

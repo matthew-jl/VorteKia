@@ -17,13 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Store } from "@/types";
 import { Save, X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CloudinaryUploader } from "./cloudinary-uploader";
 
 const formSchema = z.object({
   name: z.string().min(2).max(50, { message: "Name must be 2 to 50 chars." }),
@@ -63,11 +57,12 @@ export function StoreForm({
   setEditingStore,
 }: StoreFormProps) {
   const [isUpdate, setIsUpdate] = useState(false);
-  const imageOptions = [
-    "/images/stores/store1.jpg",
-    "/images/stores/store2.jpg",
-    "/images/stores/store3.jpg",
-  ];
+  // const imageOptions = [
+  //   "/images/stores/store1.jpg",
+  //   "/images/stores/store2.jpg",
+  //   "/images/stores/store3.jpg",
+  // ];
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,9 +87,11 @@ export function StoreForm({
         status: editingStore.status,
         photo: editingStore.photo || undefined,
       });
+      setPhotoUrl(editingStore.photo);
     } else {
       setIsUpdate(false);
       form.reset();
+      setPhotoUrl(undefined);
     }
   }, [editingStore, form]);
 
@@ -121,6 +118,7 @@ export function StoreForm({
       );
     }
     form.reset();
+    setPhotoUrl(undefined);
   }
 
   return (
@@ -203,24 +201,18 @@ export function StoreForm({
               name="photo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Photo</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose an image (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {imageOptions.map((image) => (
-                        <SelectItem key={image} value={image}>
-                          {image}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel className="text-foreground/90">Photo</FormLabel>
+                  <FormControl>
+                    <CloudinaryUploader
+                      imageUrl={photoUrl}
+                      onImageChange={(url) => {
+                        setPhotoUrl(url);
+                        form.setValue("photo", url || "");
+                      }}
+                      folder="stores"
+                      aspectRatio={4 / 3}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

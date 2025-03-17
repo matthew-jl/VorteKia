@@ -155,7 +155,7 @@ function RideHandlerPage() {
         price,
         location,
         staffId: staff_id,
-        photo: photo === "" ? null : photo, // Handle empty string as null
+        photo: photo,
       });
 
       if (response.status === "error") {
