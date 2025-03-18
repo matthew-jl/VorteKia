@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::{ActiveModelTrait, EntityTrait, QueryOrder, ColumnTrait};
 use entity::lost_and_found_items_log::{self, ActiveModel, Model};
 use uuid::Uuid;
@@ -52,6 +53,10 @@ impl LostAndFoundItemsLogHandler {
 
         let log_id = Uuid::new_v4().to_string();
 
+        let jakarta_time = Utc::now()
+            .with_timezone(&chrono::FixedOffset::east_opt(7 * 3600).unwrap())
+            .naive_local();
+
         let new_log = lost_and_found_items_log::ActiveModel {
             log_id: sea_orm::ActiveValue::Set(log_id),
             image: sea_orm::ActiveValue::Set(image),
@@ -62,7 +67,7 @@ impl LostAndFoundItemsLogHandler {
             finder: sea_orm::ActiveValue::Set(finder),
             owner: sea_orm::ActiveValue::Set(owner),
             found_location: sea_orm::ActiveValue::Set(found_location),
-            timestamp: sea_orm::ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            timestamp: sea_orm::ActiveValue::Set(jakarta_time),
             status: sea_orm::ActiveValue::Set(status),
             ..Default::default()
         };
@@ -124,7 +129,11 @@ impl LostAndFoundItemsLogHandler {
             active_log.found_location = sea_orm::ActiveValue::Set(new_found_location);
         }
         // Auto-update timestamp to current time
-        active_log.timestamp = sea_orm::ActiveValue::Set(chrono::Utc::now().naive_utc());
+        let jakarta_time = Utc::now()
+            .with_timezone(&chrono::FixedOffset::east_opt(7 * 3600).unwrap())
+            .naive_local();
+        active_log.timestamp = sea_orm::ActiveValue::Set(jakarta_time);
+        
         if let Some(new_status) = status {
             if !["Returned to Owner", "Found", "Missing"].contains(&new_status.as_str()) {
                 return Err("Invalid status provided. Must be 'Returned to Owner', 'Found', or 'Missing'.".to_string());

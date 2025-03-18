@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use entity::order_souvenir::{self, ActiveModel, Model};
 use uuid::Uuid;
@@ -71,13 +72,17 @@ impl OrderSouvenirHandler {
     ) -> Result<ApiResponse<String>, String> {
         let order_souvenir_id = Uuid::new_v4().to_string();
 
+        let jakarta_time = Utc::now()
+            .with_timezone(&chrono::FixedOffset::east_opt(7 * 3600).unwrap())
+            .naive_local();
+
         let new_order_souvenir = order_souvenir::ActiveModel {
             order_souvenir_id: sea_orm::ActiveValue::Set(order_souvenir_id),
             customer_id: sea_orm::ActiveValue::Set(customer_id),
             store_id: sea_orm::ActiveValue::Set(store_id),
             souvenir_id: sea_orm::ActiveValue::Set(souvenir_id),
             quantity: sea_orm::ActiveValue::Set(quantity),
-            timestamp: sea_orm::ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            timestamp: sea_orm::ActiveValue::Set(jakarta_time),
             ..Default::default()
         };
 

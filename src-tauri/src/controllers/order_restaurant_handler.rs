@@ -1,5 +1,6 @@
 // src-tauri/src/handler/order_restaurant_handler.rs
 
+use chrono::Utc;
 use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, QueryOrder, ColumnTrait, Set};
 use entity::order_restaurant::{self, ActiveModel, Model};
 use uuid::Uuid;
@@ -52,13 +53,17 @@ impl OrderRestaurantHandler {
     ) -> Result<ApiResponse<String>, String> {
         let order_restaurant_id = Uuid::new_v4().to_string();
 
+        let jakarta_time = Utc::now()
+            .with_timezone(&chrono::FixedOffset::east_opt(7 * 3600).unwrap())
+            .naive_local();
+
         let new_order = order_restaurant::ActiveModel {
             order_restaurant_id: Set(order_restaurant_id),
             customer_id: Set(customer_id),
             restaurant_id: Set(restaurant_id),
             menu_item_id: Set(menu_item_id),
             quantity: Set(quantity),
-            timestamp: Set(chrono::Utc::now().naive_utc()), // Auto-set to current time
+            timestamp: Set(jakarta_time), // Auto-set to current time
             status: Set("Pending".to_string()), // Initial status
             ..Default::default()
         };

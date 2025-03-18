@@ -1,3 +1,4 @@
+use chrono::Utc;
 use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, QueryOrder, ColumnTrait};
 use entity::ride_queue::{self, ActiveModel, Model};
 use rust_decimal::Decimal;
@@ -33,10 +34,14 @@ impl RideQueueHandler {
     ) -> Result<ApiResponse<String>, String> {
         let ride_queue_id = Uuid::new_v4().to_string();
 
+        let jakarta_time = Utc::now()
+            .with_timezone(&chrono::FixedOffset::east_opt(7 * 3600).unwrap())
+            .naive_local();
+
         let new_ride_queue = ride_queue::ActiveModel {
             ride_queue_id: sea_orm::ActiveValue::Set(ride_queue_id),
             ride_id: sea_orm::ActiveValue::Set(ride_id),
-            joined_at: sea_orm::ActiveValue::Set(chrono::Utc::now().naive_utc()), // Auto-set to current time
+            joined_at: sea_orm::ActiveValue::Set(jakarta_time), // Auto-set to current time
             customer_id: sea_orm::ActiveValue::Set(customer_id),
             queue_position: sea_orm::ActiveValue::Set(queue_position),
             ..Default::default()

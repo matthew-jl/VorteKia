@@ -27,20 +27,76 @@ import { CloudinaryUploader } from "./cloudinary-uploader";
 import { LostAndFoundItemsLog } from "@/types";
 
 // Zod schema for form validation
-const formSchema = z.object({
-  status: z.string(),
-  name: z
-    .string()
-    .min(2, { message: "Name must be at least 2 characters." })
-    .max(50),
-  type: z.string().min(1, { message: "Type is required." }),
-  color: z.string().min(1, { message: "Color is required." }),
-  last_seen_location: z.string().optional(),
-  finder: z.string().optional(),
-  owner: z.string().optional(),
-  found_location: z.string().optional(),
-  image: z.string().optional(),
-});
+const formSchema = z
+  .object({
+    status: z.string(),
+    name: z
+      .string()
+      .min(2, { message: "Name must be at least 2 characters." })
+      .max(50),
+    type: z.string().min(1, { message: "Type is required." }),
+    color: z.string().min(1, { message: "Color is required." }),
+    last_seen_location: z.string().optional(),
+    finder: z.string().optional(),
+    owner: z.string().optional(),
+    found_location: z.string().optional(),
+    image: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "Found") {
+      if (!data.image) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          message: "Image is required for 'Found' status.",
+          path: ["image"],
+          minimum: 1,
+          type: "string",
+          inclusive: true,
+        });
+      }
+      if (!data.found_location) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          message: "Found Location is required for 'Found' status.",
+          path: ["found_location"],
+          minimum: 1,
+          type: "string",
+          inclusive: true,
+        });
+      }
+      if (!data.finder) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          message: "Finder information is required for 'Found' status.",
+          path: ["finder"],
+          minimum: 1,
+          type: "string",
+          inclusive: true,
+        });
+      }
+    } else if (data.status === "Missing") {
+      if (!data.last_seen_location) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          message: "Last Seen Location is required for 'Missing' status.",
+          path: ["last_seen_location"],
+          minimum: 1,
+          type: "string",
+          inclusive: true,
+        });
+      }
+      if (!data.owner) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          message: "Owner information is required for 'Missing' status.",
+          path: ["owner"],
+          minimum: 1,
+          type: "string",
+          inclusive: true,
+        });
+      }
+    }
+  });
 
 // Props interface
 interface LostAndFoundItemsLogFormProps {
@@ -121,40 +177,31 @@ export function LostAndFoundItemsLogForm({
   }, [editingLog, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Transform empty strings to null for optional fields
-    const submitValues = {
-      ...values,
-      last_seen_location: values.last_seen_location || undefined,
-      finder: values.finder || undefined,
-      owner: values.owner || undefined,
-      found_location: values.found_location || undefined,
-      image: values.image || undefined,
-    };
-
     if (isUpdate && editingLog) {
+      console.log(values.image);
       updateLog(
         editingLog.log_id,
-        submitValues.status,
-        submitValues.name,
-        submitValues.type,
-        submitValues.color,
-        submitValues.last_seen_location,
-        submitValues.finder,
-        submitValues.owner,
-        submitValues.found_location,
-        submitValues.image
+        values.status,
+        values.name,
+        values.type,
+        values.color,
+        values.last_seen_location,
+        values.finder,
+        values.owner,
+        values.found_location,
+        values.image
       );
     } else {
       createLog(
-        submitValues.status,
-        submitValues.name,
-        submitValues.type,
-        submitValues.color,
-        submitValues.last_seen_location,
-        submitValues.finder,
-        submitValues.owner,
-        submitValues.found_location,
-        submitValues.image
+        values.status,
+        values.name,
+        values.type,
+        values.color,
+        values.last_seen_location,
+        values.finder,
+        values.owner,
+        values.found_location,
+        values.image
       );
     }
     form.reset();

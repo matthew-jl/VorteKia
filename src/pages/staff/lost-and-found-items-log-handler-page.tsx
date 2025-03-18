@@ -53,12 +53,12 @@ function LostAndFoundItemsLogHandlerPage() {
       const payload = {
         status,
         name,
-        ["r#type"]: type, // Match Rust parameter name
+        type, // Match Rust parameter name
         color,
-        last_seen_location,
+        lastSeenLocation: last_seen_location,
         finder,
         owner,
-        found_location,
+        foundLocation: found_location,
         image,
       };
       const response = await invoke<ApiResponse<string>>(
@@ -89,16 +89,16 @@ function LostAndFoundItemsLogHandlerPage() {
   ) {
     try {
       const payload = {
-        log_id,
+        logId: log_id,
         status,
         name,
-        ["r#type"]: type, // Match Rust parameter name
+        type, // Match Rust parameter name
         color,
-        last_seen_location,
+        lastSeenLocation: last_seen_location,
         finder,
         owner,
-        found_location,
-        image,
+        foundLocation: found_location,
+        image: image,
       };
       const response = await invoke<ApiResponse<string>>(
         "update_log_data",
@@ -121,6 +121,7 @@ function LostAndFoundItemsLogHandlerPage() {
                   owner,
                   found_location,
                   image,
+                  timestamp: new Date().toISOString(),
                 }
               : log
           )
@@ -193,7 +194,9 @@ function LostAndFoundItemsLogHandlerPage() {
                       <TableCell>{log.finder || "N/A"}</TableCell>
                       <TableCell>{log.owner || "N/A"}</TableCell>
                       <TableCell>{log.found_location || "N/A"}</TableCell>
-                      <TableCell>{log.timestamp}</TableCell>
+                      <TableCell>
+                        {new Date(log.timestamp).toLocaleString()}
+                      </TableCell>
                       <TableCell>{log.status}</TableCell>
                       <TableCell>
                         {log.image && (
