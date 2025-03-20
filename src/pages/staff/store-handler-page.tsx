@@ -27,6 +27,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { StoreForm } from "@/components/store-form";
 import { Edit, Trash2, ShoppingBag } from "lucide-react";
 import SouvenirHandlerPage from "./souvenir-handler-page";
+import { useStaffUser } from "@/context/staff-user-context";
 
 function StoreHandlerPage() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -34,6 +35,9 @@ function StoreHandlerPage() {
   const [managingSouvenirsForStoreId, setManagingSouvenirsForStoreId] =
     useState<string | null>(null);
   const souvenirHandlerRef = useRef<HTMLDivElement>(null);
+  const { staffRole } = useStaffUser();
+
+  const canEdit = staffRole === "RetailManager";
 
   useEffect(() => {
     if (managingSouvenirsForStoreId && souvenirHandlerRef.current) {
@@ -173,14 +177,16 @@ function StoreHandlerPage() {
 
         <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">
           {/* Form Section */}
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
-            <StoreForm
-              createStore={createStore}
-              updateStore={updateStore}
-              editingStore={editingStore}
-              setEditingStore={setEditingStore}
-            />
-          </div>
+          {canEdit && (
+            <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+              <StoreForm
+                createStore={createStore}
+                updateStore={updateStore}
+                editingStore={editingStore}
+                setEditingStore={setEditingStore}
+              />
+            </div>
+          )}
 
           {/* Table Section */}
           <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden p-6">
@@ -196,7 +202,9 @@ function StoreHandlerPage() {
                     <TableHead>Closing Time</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Photo</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {canEdit && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -219,62 +227,64 @@ function StoreHandlerPage() {
                           />
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingStore(store)}
-                            className="h-8 w-8"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you absolutely sure?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the store and its data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteStore(store.store_id)}
+                      {canEdit && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingStore(store)}
+                              className="h-8 w-8"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            aria-label="Manage Souvenirs"
-                            onClick={() =>
-                              setManagingSouvenirsForStoreId(store.store_id)
-                            }
-                          >
-                            <ShoppingBag className="h-4 w-4" />
-                            <span className="sr-only">Manage Souvenirs</span>
-                          </Button>
-                        </div>
-                      </TableCell>
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you absolutely sure?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will
+                                    permanently delete the store and its data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteStore(store.store_id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label="Manage Souvenirs"
+                              onClick={() =>
+                                setManagingSouvenirsForStoreId(store.store_id)
+                              }
+                            >
+                              <ShoppingBag className="h-4 w-4" />
+                              <span className="sr-only">Manage Souvenirs</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

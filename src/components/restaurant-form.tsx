@@ -117,6 +117,8 @@ export function RestaurantForm({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (isUpdate && editingRestaurant) {
+      console.log(values.closing_time);
+      console.log(typeof values.closing_time);
       updateRestaurant(
         editingRestaurant.restaurant_id,
         values.name,
@@ -204,6 +206,7 @@ export function RestaurantForm({
                   <FormControl>
                     <Input
                       type="time" // Use time input type
+                      step={1}
                       {...field}
                       className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary"
                     />
@@ -224,6 +227,7 @@ export function RestaurantForm({
                   <FormControl>
                     <Input
                       type="time" // Use time input type
+                      step={1}
                       {...field}
                       className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary"
                     />

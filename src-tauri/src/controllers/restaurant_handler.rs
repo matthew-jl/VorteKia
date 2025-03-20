@@ -1,3 +1,4 @@
+use chrono::{FixedOffset, Utc};
 use sea_orm::{prelude::Time, ActiveModelTrait, EntityTrait, QueryOrder, QuerySelect};
 use entity::restaurant::{self, ActiveModel, Model};
 use uuid::Uuid;
@@ -6,10 +7,35 @@ use crate::{ApiResponse, AppState};
 pub struct RestaurantHandler;
 
 impl RestaurantHandler {
+
+    fn get_restaurant_current_status(restaurant: &Model) -> String {
+        let jakarta_offset = FixedOffset::east_opt(7 * 3600).unwrap(); // Define Jakarta offset
+        let current_time_jakarta = Utc::now().with_timezone(&jakarta_offset).naive_local().time(); // Use FixedOffset
+        let opening_time = restaurant.opening_time;
+        let closing_time = restaurant.closing_time;
+
+        // println!("{}", current_time_jakarta);
+        // println!("{}",opening_time);
+        // println!("{}",closing_time);
+
+        if current_time_jakarta >= opening_time && current_time_jakarta < closing_time {
+            "Open".to_string()
+        } else {
+            "Closed".to_string()
+        }
+    }
+
     // View restaurants
     pub async fn view_restaurants(state: &AppState) -> Result<ApiResponse<Vec<Model>>, String> {
         match restaurant::Entity::find().order_by_asc(restaurant::Column::Name).all(&state.db).await {
-            Ok(restaurants) => Ok(ApiResponse::success(restaurants)),
+            Ok(restaurants) => {
+                // Update status based on current time for each restaurant
+                let updated_restaurants: Vec<Model> = restaurants.into_iter().map(|mut restaurant| {
+                    restaurant.status = Self::get_restaurant_current_status(&restaurant);
+                    restaurant
+                }).collect();
+                Ok(ApiResponse::success(updated_restaurants))
+            }
             Err(err) => Err(format!("Error fetching restaurants: {}", err)),
         }
     }
@@ -20,7 +46,9 @@ impl RestaurantHandler {
         restaurant_id: String,
     ) -> Result<ApiResponse<Model>, String> {
         match restaurant::Entity::find_by_id(restaurant_id.clone()).one(&state.db).await {
-            Ok(Some(restaurant_details)) => {
+             Ok(Some(mut restaurant_details)) => {
+                // Update status based on current time
+                restaurant_details.status = Self::get_restaurant_current_status(&restaurant_details);
                 Ok(ApiResponse::success(restaurant_details))
             }
             Ok(None) => {

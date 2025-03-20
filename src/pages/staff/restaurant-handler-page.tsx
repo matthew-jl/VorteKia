@@ -25,8 +25,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { RestaurantForm } from "@/components/restaurant-form"; // Import RestaurantForm
-import { Edit, Trash2, Menu, Utensils } from "lucide-react"; // Import Menu icon
+import { Edit, Trash2, Menu, Utensils, Filter } from "lucide-react"; // Import Menu icon
 import MenuItemHandlerPage from "./menu-item-handler-page";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 function RestaurantHandlerPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]); // Use Restaurant interface array
@@ -36,6 +44,7 @@ function RestaurantHandlerPage() {
   const [managingMenuForRestaurantId, setManagingMenuForRestaurantId] =
     useState<string | null>(null); // State to track restaurant for menu management
   const menuItemHandlerRef = useRef<HTMLDivElement>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("All");
 
   useEffect(() => {
     if (managingMenuForRestaurantId && menuItemHandlerRef.current) {
@@ -186,6 +195,14 @@ function RestaurantHandlerPage() {
     }
   }
 
+  // Filter restaurants based on status
+  const filteredRestaurants = restaurants.filter((restaurant) => {
+    if (statusFilter === "All") return true;
+    return restaurant.status === statusFilter;
+  });
+
+  const statuses = ["All", "Open", "Closed"]; // Filter options
+
   return (
     <div className="relative min-h-screen">
       {/* Background image with overlay */}
@@ -217,6 +234,34 @@ function RestaurantHandlerPage() {
 
           {/* Table Section */}
           <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden p-6">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="mb-4 flex items-center gap-2"
+                >
+                  <Filter size={18} />
+                  <span>Filter by Status</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Filter by Status</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {statuses.map((status) => (
+                    <Badge
+                      key={status}
+                      variant={statusFilter === status ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => setStatusFilter(status)}
+                    >
+                      {status}
+                    </Badge>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
             <div className="overflow-x-auto">
               <Table>
                 <TableCaption>VorteKia Restaurants</TableCaption>
@@ -234,7 +279,7 @@ function RestaurantHandlerPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {restaurants.map((restaurant) => (
+                  {filteredRestaurants.map((restaurant) => (
                     <TableRow key={restaurant.restaurant_id}>
                       <TableCell className="font-medium">
                         {restaurant.restaurant_id}

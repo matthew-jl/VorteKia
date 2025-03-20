@@ -44,6 +44,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { LoadingScreen } from "@/components/loading-screen";
+import { ErrorScreen } from "@/components/error-screen";
+import { NotFoundScreen } from "@/components/not-found-screen";
 
 function RestaurantUIComponent() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
@@ -200,51 +203,21 @@ function RestaurantUIComponent() {
     : 0;
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-lg">Loading restaurant information...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading restaurant information..." />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">
-              Error Loading Restaurant
-            </h2>
-            <p className="text-muted-foreground">{error}</p>
-            <Button className="mt-4" onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ErrorScreen error={error} onTryAgain={() => window.location.reload()} />
     );
   }
 
   if (!restaurant) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <Ban className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Restaurant Not Found</h2>
-            <p className="text-muted-foreground">
-              The requested restaurant could not be found.
-            </p>
-            <Button className="mt-4" onClick={() => window.history.back()}>
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NotFoundScreen
+        message="Restaurant Not Found"
+        onGoBack={() => window.history.back()}
+      />
     );
   }
 
@@ -262,173 +235,201 @@ function RestaurantUIComponent() {
         <div className="absolute inset-0 bg-black/70"></div>
       </div>
       <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
-        <div className="mb-6">
-          <div className="flex items-center w-full md:w-1/2">
-            <span className="absolute ml-3">
-              <Search className="h-4 w-4 text-muted-foreground" />
-            </span>
-            <Input
-              type="text"
-              placeholder="Search menu items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full bg-background"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMenuItems.length === 0 && !loading ? (
-            <div className="text-center col-span-full">
-              No menu items found.
+        <div className="max-w-4xl mx-auto">
+          {restaurant.status === "Closed" && (
+            <div className="mb-6 p-4 rounded-lg bg-destructive/20 text-destructive-foreground">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                <p className="font-medium">
+                  This restaurant is currently closed. Ordering is not available
+                  at this time.
+                </p>
+              </div>
             </div>
-          ) : (
-            filteredMenuItems.map((item) => (
-              <Card
-                key={item.menu_item_id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader>
-                  <CardTitle>{item.name}</CardTitle>
-                  <CardDescription>{formatRupiah(item.price)}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {item.photo ? (
-                    <img
-                      src={
-                        item.photo || "/placeholder.svg?height=200&width=200"
-                      }
-                      alt={item.name}
-                      className="w-full h-48 object-cover rounded-md mb-4"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-muted flex items-center justify-center text-muted-foreground rounded-md">
-                      No image
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleOrder(item)}
-                        disabled={!isLoggedIn()}
-                      >
-                        <ShoppingBasket className="mr-2 h-4 w-4" />
-                        Order
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>
-                          Order {selectedMenuItem?.name}
-                        </DialogTitle>
-                        <DialogDescription>
-                          Enter the quantity you would like to order.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="quantity" className="text-right">
-                            Quantity
-                          </Label>
-                          <Input
-                            id="quantity"
-                            type="number"
-                            value={orderQuantity}
-                            onChange={(e) => {
-                              const val = parseInt(e.target.value);
-                              setOrderQuantity(isNaN(val) || val < 1 ? 1 : val);
-                            }}
-                            className="col-span-3"
-                            min={1}
+          )}
+          {restaurant.status !== "Closed" && (
+            <>
+              <div className="mb-6">
+                <div className="flex items-center w-full md:w-1/2">
+                  <span className="absolute ml-3">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                  </span>
+                  <Input
+                    type="text"
+                    placeholder="Search menu items..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full bg-background"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredMenuItems.length === 0 && !loading ? (
+                  <div className="text-center col-span-full">
+                    No menu items found.
+                  </div>
+                ) : (
+                  filteredMenuItems.map((item) => (
+                    <Card
+                      key={item.menu_item_id}
+                      className="hover:shadow-lg transition-shadow"
+                    >
+                      <CardHeader>
+                        <CardTitle>{item.name}</CardTitle>
+                        <CardDescription>
+                          {formatRupiah(item.price)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {item.photo ? (
+                          <img
+                            src={
+                              item.photo ||
+                              "/placeholder.svg?height=200&width=200"
+                            }
+                            alt={item.name}
+                            className="w-full h-48 object-cover rounded-md mb-4"
                           />
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            Total Price: {formatRupiah(totalPrice)}
-                          </p>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          type="submit"
-                          onClick={confirmOrder}
-                          disabled={orderLoading}
-                        >
-                          {orderLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Placing Order...
-                            </>
-                          ) : (
-                            "Confirm Order"
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </CardFooter>
-              </Card>
-            ))
+                        ) : (
+                          <div className="w-full h-48 bg-muted flex items-center justify-center text-muted-foreground rounded-md">
+                            No image
+                          </div>
+                        )}
+                      </CardContent>
+                      <CardFooter>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => handleOrder(item)}
+                              disabled={!isLoggedIn()}
+                            >
+                              <ShoppingBasket className="mr-2 h-4 w-4" />
+                              Order
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                              <DialogTitle>
+                                Order {selectedMenuItem?.name}
+                              </DialogTitle>
+                              <DialogDescription>
+                                Enter the quantity you would like to order.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label
+                                  htmlFor="quantity"
+                                  className="text-right"
+                                >
+                                  Quantity
+                                </Label>
+                                <Input
+                                  id="quantity"
+                                  type="number"
+                                  value={orderQuantity}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    setOrderQuantity(
+                                      isNaN(val) || val < 1 ? 1 : val
+                                    );
+                                  }}
+                                  className="col-span-3"
+                                  min={1}
+                                />
+                              </div>
+                              <div>
+                                <p className="font-semibold">
+                                  Total Price: {formatRupiah(totalPrice)}
+                                </p>
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button
+                                type="submit"
+                                onClick={confirmOrder}
+                                disabled={orderLoading}
+                              >
+                                {orderLoading ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Placing Order...
+                                  </>
+                                ) : (
+                                  "Confirm Order"
+                                )}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </CardFooter>
+                    </Card>
+                  ))
+                )}
+              </div>
+              {!isLoggedIn() && (
+                <div className="mt-8 p-4 bg-foreground rounded-lg text-center col-span-full">
+                  <p className="mb-2 text-background">
+                    Please log in to place an order.
+                  </p>
+                </div>
+              )}
+
+              {isLoggedIn() && (
+                <Card className="mt-8 bg-background backdrop-blur-md">
+                  <CardHeader>
+                    <CardTitle>Your Orders</CardTitle>
+                    <CardDescription>
+                      A list of your recent orders at this restaurant.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Order ID</TableHead>
+                            {/* <TableHead>Restaurant</TableHead> */}
+                            <TableHead>Menu Item</TableHead>
+                            <TableHead>Quantity</TableHead>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customerOrders.map((order) => (
+                            <TableRow key={order.order_restaurant_id}>
+                              <TableCell>{order.order_restaurant_id}</TableCell>
+                              {/* <TableCell>{restaurant?.name}</TableCell> */}
+                              <TableCell>
+                                {
+                                  menuItems.find(
+                                    (item) =>
+                                      item.menu_item_id === order.menu_item_id
+                                  )?.name
+                                }
+                              </TableCell>
+                              <TableCell>{order.quantity}</TableCell>
+                              <TableCell>
+                                {new Date(order.timestamp).toLocaleString()}
+                              </TableCell>
+                              <TableCell>{order.status}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                        <TableCaption>
+                          A list of your recent orders.
+                        </TableCaption>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
-        {!isLoggedIn() && (
-          <div className="mt-8 p-4 bg-foreground rounded-lg text-center col-span-full">
-            <p className="mb-2 text-background">
-              Please log in to place an order.
-            </p>
-          </div>
-        )}
-
-        {isLoggedIn() && (
-          <Card className="mt-8 bg-background backdrop-blur-md">
-            <CardHeader>
-              <CardTitle>Your Orders</CardTitle>
-              <CardDescription>
-                A list of your recent orders at this restaurant.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      {/* <TableHead>Restaurant</TableHead> */}
-                      <TableHead>Menu Item</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Timestamp</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {customerOrders.map((order) => (
-                      <TableRow key={order.order_restaurant_id}>
-                        <TableCell>{order.order_restaurant_id}</TableCell>
-                        {/* <TableCell>{restaurant?.name}</TableCell> */}
-                        <TableCell>
-                          {
-                            menuItems.find(
-                              (item) => item.menu_item_id === order.menu_item_id
-                            )?.name
-                          }
-                        </TableCell>
-                        <TableCell>{order.quantity}</TableCell>
-                        <TableCell>
-                          {new Date(order.timestamp).toLocaleString()}
-                        </TableCell>
-                        <TableCell>{order.status}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableCaption>A list of your recent orders.</TableCaption>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </main>
     </div>
   );

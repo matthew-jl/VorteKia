@@ -14,10 +14,13 @@ import { StaffLoginForm } from "@/components/staff-login-form";
 import { useStaffUser } from "@/context/staff-user-context";
 import { invoke } from "@tauri-apps/api/core";
 import { ApiResponse, Staff } from "@/types";
+import { useNavigate } from "react-router";
 
 interface StaffNavbarProps {}
 
 export function StaffNavbar({}: StaffNavbarProps) {
+  const navigate = useNavigate();
+
   const { isLoggedIn, login, logout, staffName, staffRole } = useStaffUser();
 
   const handleLogin = async (sessionToken: string, staffEmail: string) => {
@@ -51,6 +54,10 @@ export function StaffNavbar({}: StaffNavbarProps) {
     logout();
   };
 
+  const navigateToChatPage = () => {
+    navigate("/chat");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -66,7 +73,8 @@ export function StaffNavbar({}: StaffNavbarProps) {
                 variant="ghost"
                 size="icon"
                 className="rounded-full"
-                aria-label="Customer service"
+                aria-label="Group Chat"
+                onClick={navigateToChatPage}
               >
                 <MessageSquare className="h-5 w-5" />
               </Button>
