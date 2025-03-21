@@ -114,3 +114,19 @@ export interface LostAndFoundItemsLog {
   timestamp: string;
   status: string;
 }
+
+export interface Chat {
+  chat_id: string;
+  name: string;
+  last_message_text: string | undefined;
+  last_message_timestamp: string | undefined; // or string if you prefer ISO date string
+  created_at: string; // or string if you prefer ISO date string
+}
+
+export interface Message {
+  message_id: string;
+  chat_id: string;
+  sender_id: string;
+  text: string;
+  timestamp: string; // or string if you prefer ISO date string
+}

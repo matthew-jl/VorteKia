@@ -1,4 +1,5 @@
 use anyhow::Result;
+use controllers::chat_handler::ChatHandler;
 use controllers::lost_and_found_items_log_handler::LostAndFoundItemsLogHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
@@ -764,6 +765,65 @@ async fn delete_log_data(state: State<'_, AppState>, log_id: String) -> Result<S
     LostAndFoundItemsLogHandler::delete_log_data(&state, log_id).await
 }
 
+// Chat related commands
+#[tauri::command]
+async fn view_chats(
+    state: State<'_, AppState>,
+    user_id: String,
+) -> Result<ApiResponse<Vec<entity::chat::Model>>, String> {
+    ChatHandler::view_chats(&state, user_id).await
+}
+
+#[tauri::command]
+async fn get_chat_details(
+    state: State<'_, AppState>,
+    chat_id: String,
+) -> Result<ApiResponse<entity::chat::Model>, String> {
+    ChatHandler::get_chat_details(&state, chat_id).await
+}
+
+#[tauri::command]
+async fn save_chat_data(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<ApiResponse<String>, String> {
+    ChatHandler::save_chat_data(&state, name).await
+}
+
+#[tauri::command]
+async fn get_messages(
+    state: State<'_, AppState>,
+    chat_id: String,
+) -> Result<ApiResponse<Vec<entity::message::Model>>, String> {
+    ChatHandler::get_messages(&state, chat_id).await
+}
+
+#[tauri::command]
+async fn save_message_data(
+    state: State<'_, AppState>,
+    chat_id: String,
+    sender_id: String,
+    text: String,
+) -> Result<ApiResponse<String>, String> {
+    ChatHandler::save_message_data(&state, chat_id, sender_id, text).await
+}
+
+#[tauri::command]
+async fn save_chat_member_data(
+    state: State<'_, AppState>,
+    chat_id: String,
+    user_id: String,
+) -> Result<ApiResponse<String>, String> {
+    ChatHandler::save_chat_member_data(&state, chat_id, user_id).await
+}
+
+#[tauri::command]
+async fn get_chat_members( // Example additional command
+    state: State<'_, AppState>,
+    chat_id: String,
+) -> Result<ApiResponse<Vec<entity::chat_member::Model>>, String> {
+    ChatHandler::get_chat_members(&state, chat_id).await
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -805,6 +865,7 @@ pub fn run() {
             view_souvenirs, get_souvenir_details, save_souvenir_data, update_souvenir_data, update_souvenir_stock, delete_souvenir_data,
             view_order_souvenirs, view_order_souvenirs_by_customer, get_order_souvenir_details, save_order_souvenir_data, delete_order_souvenir_data,
             view_logs, save_log_data, update_log_data, delete_log_data,
+            view_chats, get_chat_details, save_chat_data, get_messages, save_message_data, save_chat_member_data, get_chat_members,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

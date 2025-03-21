@@ -1,6 +1,7 @@
+// src/pages/group-chat-page.tsx
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { StaffNavbar } from "@/components/staff-navbar";
 import { StaffUserProvider, useStaffUser } from "@/context/staff-user-context";
@@ -11,41 +12,54 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Send, Users } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 
-// Define types for our chat data
-interface GroupChat {
-  chat_id: string;
-  name: string;
-  last_message?: string;
-  last_message_time?: string;
-  unread_count?: number;
-}
-
-interface Message {
-  message_id: string;
-  chat_id: string;
-  sender_id: string;
-  sender_name: string;
-  content: string;
-  timestamp: string;
-}
+import { ApiResponse, Chat, Message as MessageType } from "@/types"; // Import Chat and Message types from "@/types"
+import { invoke } from "@tauri-apps/api/core";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import { LoadingScreen } from "@/components/loading-screen";
+import { AccessRequiredScreen } from "@/components/access-required-screen";
 
 function GroupChatPageUI() {
   const navigate = useNavigate();
   const { isLoggedIn, staffId, staffName } = useStaffUser();
   const [loading, setLoading] = useState(true);
-  const [chats, setChats] = useState<GroupChat[]>([]);
-  const [selectedChat, setSelectedChat] = useState<GroupChat | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]); // Use Chat interface from "@/types"
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null); // Use Chat interface from "@/types"
+  const [messages, setMessages] = useState<MessageType[]>([]); // Use Message interface from "@/types"
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is logged in
-  //   useEffect(() => {
-  //     if (!isLoggedIn()) {
-  //       navigate("/staff");
-  //     }
-  //   }, [isLoggedIn, navigate]);
+  useEffect(() => {
+    setLoading(false);
+  }, [isLoggedIn]);
+
+  const fetchMessages = useCallback(async () => {
+    // useCallback here
+    if (!selectedChat) return;
+
+    try {
+      setLoading(true);
+      const response = await invoke<ApiResponse<MessageType[]>>(
+        "get_messages",
+        {
+          chatId: selectedChat.chat_id,
+        }
+      );
+
+      if (response.status === "success") {
+        setMessages(response.data || []);
+      } else {
+        console.error("Failed to fetch messages:", response.message);
+        toast.error(response.message || "Failed to fetch messages");
+      }
+    } catch (error: any) {
+      console.error("Error fetching messages:", error);
+      toast.error("Error fetching messages: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedChat]); // Dependency array includes selectedChat
 
   // Fetch group chats
   useEffect(() => {
@@ -54,149 +68,37 @@ function GroupChatPageUI() {
 
       try {
         setLoading(true);
+        const response = await invoke<ApiResponse<Chat[]>>("view_chats", {
+          // Call view_chats backend command
+          userId: staffId, // Pass staffId as user_id
+        });
 
-        // REPLACE THIS: In a real implementation, uncomment and use this
-        // const response = await invoke<ApiResponse<GroupChat[]>>(
-        //   "get_staff_group_chats",
-        //   { staffId }
-        // );
-
-        // if (response.status === "success") {
-        //   setChats(response.data || []);
-        // } else {
-        //   console.error("Failed to fetch group chats:", response.message);
-        // }
-
-        // Mock data for demonstration
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API delay
-
-        const mockChats: GroupChat[] = [
-          {
-            chat_id: "chat1",
-            name: "Ride Staff Team",
-            last_message: "When is the next maintenance scheduled?",
-            last_message_time: new Date(Date.now() - 15 * 60000).toISOString(),
-            unread_count: 2,
-          },
-          {
-            chat_id: "chat2",
-            name: "Restaurant Team",
-            last_message: "We need to order more supplies",
-            last_message_time: new Date(Date.now() - 2 * 3600000).toISOString(),
-            unread_count: 0,
-          },
-          {
-            chat_id: "chat3",
-            name: "Management",
-            last_message: "Please submit your reports by Friday",
-            last_message_time: new Date(
-              Date.now() - 1 * 86400000
-            ).toISOString(),
-            unread_count: 0,
-          },
-          {
-            chat_id: "chat4",
-            name: "IT Support",
-            last_message: "The new system update will be deployed tonight",
-            last_message_time: new Date(
-              Date.now() - 3 * 86400000
-            ).toISOString(),
-            unread_count: 0,
-          },
-        ];
-
-        setChats(mockChats);
-      } catch (error) {
+        if (response.status === "success") {
+          setChats(response.data || []);
+        } else {
+          console.error("Failed to fetch group chats:", response.message);
+          toast.error(response.message || "Failed to fetch group chats");
+        }
+      } catch (error: any) {
         console.error("Error fetching group chats:", error);
+        toast.error("Error fetching group chats: " + error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGroupChats();
-  }, [staffId]);
+    if (isLoggedIn()) {
+      // Fetch chats only if logged in
+      fetchGroupChats();
+    }
+  }, [staffId, isLoggedIn]);
 
   // Fetch messages for selected chat
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!selectedChat) return;
-
-      try {
-        setLoading(true);
-
-        // REPLACE THIS: In a real implementation, uncomment and use this
-        // const response = await invoke<ApiResponse<Message[]>>(
-        //   "get_chat_messages",
-        //   { chatId: selectedChat.chat_id }
-        // );
-
-        // if (response.status === "success") {
-        //   setMessages(response.data || []);
-        // } else {
-        //   console.error("Failed to fetch messages:", response.message);
-        // }
-
-        // Mock data for demonstration
-        await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API delay
-
-        const mockMessages: Message[] = [
-          {
-            message_id: "msg1",
-            chat_id: selectedChat.chat_id,
-            sender_id: "staff1",
-            sender_name: "Jane Smith",
-            content: "Hello everyone! How's everything going today?",
-            timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
-          },
-          {
-            message_id: "msg2",
-            chat_id: selectedChat.chat_id,
-            sender_id: "staff2",
-            sender_name: "John Davis",
-            content: "All good here. The new ride is working perfectly.",
-            timestamp: new Date(Date.now() - 115 * 60000).toISOString(),
-          },
-          {
-            message_id: "msg3",
-            chat_id: selectedChat.chat_id,
-            sender_id: staffId || "",
-            sender_name: staffName || "You",
-            content: "Great to hear! I'll be checking it out later today.",
-            timestamp: new Date(Date.now() - 100 * 60000).toISOString(),
-          },
-          {
-            message_id: "msg4",
-            chat_id: selectedChat.chat_id,
-            sender_id: "staff3",
-            sender_name: "Alex Johnson",
-            content: "When is the next maintenance scheduled?",
-            timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
-          },
-        ];
-
-        setMessages(mockMessages);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
-
-    // In a real implementation, you might want to set up a listener for new messages
-    // This could be a WebSocket connection or a polling mechanism
-
-    // const messageListener = listen<Message>("new_message", (event) => {
-    //   if (event.payload.chat_id === selectedChat.chat_id) {
-    //     setMessages(prev => [...prev, event.payload]);
-    //   }
-    // });
-
-    // return () => {
-    //   messageListener.then(unlisten => unlisten());
-    // };
-  }, [selectedChat, staffId, staffName]);
+    if (selectedChat) {
+      fetchMessages(); // Call the useCallback fetchMessages here
+    }
+  }, [selectedChat, fetchMessages]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -210,60 +112,33 @@ function GroupChatPageUI() {
     try {
       setSendingMessage(true);
 
-      // REPLACE THIS: In a real implementation, uncomment and use this
-      // const response = await invoke<ApiResponse<Message>>(
-      //   "send_chat_message",
-      //   {
-      //     chatId: selectedChat.chat_id,
-      //     senderId: staffId,
-      //     content: newMessage,
-      //   }
-      // );
-
-      // if (response.status === "success" && response.data) {
-      //   setMessages(prev => [...prev, response.data]);
-      //   setNewMessage("");
-      // } else {
-      //   console.error("Failed to send message:", response.message);
-      // }
-
-      // Mock implementation for demonstration
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate API delay
-
-      const newMsg: Message = {
-        message_id: `msg${Date.now()}`,
-        chat_id: selectedChat.chat_id,
-        sender_id: staffId,
-        sender_name: staffName || "You",
-        content: newMessage,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, newMsg]);
-      setNewMessage("");
-
-      // Update the last message in the chat list
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.chat_id === selectedChat.chat_id
-            ? {
-                ...chat,
-                last_message: newMessage,
-                last_message_time: new Date().toISOString(),
-                unread_count: 0,
-              }
-            : chat
-        )
+      const response = await invoke<ApiResponse<MessageType>>( // Call save_message_data backend command
+        "save_message_data",
+        {
+          chatId: selectedChat.chat_id, // Pass selectedChat.chat_id
+          senderId: staffId, // Pass staffId as sender_id
+          text: newMessage, // Pass newMessage as text
+        }
       );
-    } catch (error) {
+
+      if (response.status === "success") {
+        setNewMessage("");
+        fetchMessages(); // Refresh messages after sending
+      } else {
+        console.error("Failed to send message:", response.message);
+        toast.error(response.message || "Failed to send message");
+      }
+    } catch (error: any) {
       console.error("Error sending message:", error);
+      toast.error("Error sending message: " + error.message);
     } finally {
       setSendingMessage(false);
     }
   };
 
-  // Format timestamp for display
+  // Format timestamp for display (no changes)
   const formatTimestamp = (timestamp: string) => {
+    // ... (formatTimestamp function - no changes) ...
     const date = new Date(timestamp);
     const now = new Date();
     const diffDays = Math.floor(
@@ -288,9 +163,24 @@ function GroupChatPageUI() {
     }
   };
 
-  // If not logged in, don't render anything (will redirect)
+  // Loading state handling with LoadingScreen
+  if (loading) {
+    return (
+      <LoadingScreen message="Loading Chats..." navbar={<StaffNavbar />} />
+    );
+  }
+
+  // If not logged in, don't render anything (will redirect) - No changes needed
   if (!isLoggedIn()) {
-    return null;
+    return (
+      <AccessRequiredScreen
+        isLoggedIn={isLoggedIn()}
+        staffPortalName="VorteKia Theme Park Chat UI"
+        entityName="chat features"
+        backgroundImageUrl="/images/themeparkbg_2.jpg"
+        navbar={<StaffNavbar />}
+      />
+    );
   }
 
   return (
@@ -298,8 +188,9 @@ function GroupChatPageUI() {
       <StaffNavbar />
 
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        {/* Chat List Sidebar */}
+        {/* Chat List Sidebar (no changes) */}
         <div className="w-full md:w-80 border-r flex flex-col">
+          {/* ... Chat list sidebar UI (mostly no changes, adjust types if needed) ... */}
           <div className="p-4 border-b flex items-center gap-2">
             <Button
               variant="ghost"
@@ -314,8 +205,7 @@ function GroupChatPageUI() {
           </div>
 
           <ScrollArea className="flex-1">
-            {loading && !chats.length ? (
-              // Loading skeletons
+            {loading && !chats.length ? ( // Loading state for chats
               <div className="p-4 space-y-4">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="flex items-center space-x-4">
@@ -346,23 +236,18 @@ function GroupChatPageUI() {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline">
                           <h3 className="font-medium truncate">{chat.name}</h3>
-                          {chat.last_message_time && (
+                          {chat.last_message_timestamp && ( // Use last_message_timestamp
                             <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
-                              {formatTimestamp(chat.last_message_time)}
+                              {formatTimestamp(chat.last_message_timestamp)}
                             </span>
                           )}
                         </div>
-                        {chat.last_message && (
+                        {chat.last_message_text && ( // Use last_message_text
                           <p className="text-sm text-muted-foreground truncate">
-                            {chat.last_message}
+                            {chat.last_message_text}
                           </p>
                         )}
                       </div>
-                      {chat.unread_count ? (
-                        <div className="bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
-                          {chat.unread_count}
-                        </div>
-                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -371,11 +256,11 @@ function GroupChatPageUI() {
           </ScrollArea>
         </div>
 
-        {/* Chat Window */}
+        {/* Chat Window (mostly no changes, adjust types if needed) */}
         <div className="flex-1 flex flex-col">
           {selectedChat ? (
             <>
-              {/* Chat Header */}
+              {/* Chat Header (no changes) */}
               <div className="p-4 border-b flex items-center">
                 <div className="flex items-center gap-3">
                   <div className="bg-primary/20 h-10 w-10 rounded-full flex items-center justify-center">
@@ -387,7 +272,7 @@ function GroupChatPageUI() {
 
               {/* Messages */}
               <ScrollArea className="flex-1 p-4">
-                {loading ? (
+                {loading && selectedChat ? ( // Loading state for messages
                   <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
                       <div
@@ -425,7 +310,7 @@ function GroupChatPageUI() {
                 )}
               </ScrollArea>
 
-              {/* Message Input */}
+              {/* Message Input (no changes) */}
               <div className="p-4 border-t">
                 <form
                   className="flex items-center gap-2"
@@ -464,6 +349,7 @@ function GroupChatPageUI() {
           )}
         </div>
       </div>
+      <Toaster />
     </div>
   );
 }

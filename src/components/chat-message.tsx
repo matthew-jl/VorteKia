@@ -1,16 +1,10 @@
+// src/components/chat-message.tsx
+"use client";
 import { formatDistanceToNow } from "date-fns";
-
-interface Message {
-  message_id: string;
-  chat_id: string;
-  sender_id: string;
-  sender_name: string;
-  content: string;
-  timestamp: string;
-}
+import { Message } from "@/types"; // Import Message type from "@/types"
 
 interface ChatMessageProps {
-  message: Message;
+  message: Message; // Use Message interface from "@/types"
   isOwnMessage: boolean;
 }
 
@@ -24,9 +18,11 @@ export function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
   return (
     <div className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
       <div className={`max-w-[80%] ${isOwnMessage ? "order-1" : "order-none"}`}>
-        {!isOwnMessage && (
-          <div className="text-sm font-medium mb-1">{message.sender_name}</div>
-        )}
+        {!isOwnMessage ? (
+          <div className="text-sm font-medium mb-1">
+            Staff {message.sender_id}
+          </div>
+        ) : null}
         <div className="flex items-end gap-2">
           <div
             className={`rounded-lg p-3 ${
@@ -35,7 +31,8 @@ export function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
                 : "bg-muted rounded-tl-none"
             }`}
           >
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <p className="whitespace-pre-wrap break-words">{message.text}</p>{" "}
+            {/* Use message.text */}
           </div>
         </div>
         <div

@@ -10,6 +10,9 @@ pub mod store;
 pub mod souvenir;
 pub mod order_souvenir;
 pub mod lost_and_found_items_log;
+pub mod chat;
+pub mod message;
+pub mod chat_member;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
