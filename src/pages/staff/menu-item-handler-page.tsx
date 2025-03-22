@@ -48,7 +48,6 @@ function MenuItemHandlerPage({
         }
       );
       setMenuItems(response.data || []);
-      console.log("Fetched menu items:", response.data);
     } catch (error) {
       console.error("Error fetching menu items:", error);
     }
@@ -88,7 +87,6 @@ function MenuItemHandlerPage({
             restaurant_id: restaurantId,
           },
         ]);
-        console.log(menuItems);
       }
     } catch (error) {
       console.error("Unexpected error creating menu item:", error);

@@ -43,7 +43,6 @@ function SouvenirHandlerPage({ storeId, storeName }: SouvenirHandlerPageProps) {
         storeId: storeId,
       });
       setSouvenirs(response.data || []);
-      console.log("Fetched souvenirs:", response.data);
     } catch (error) {
       console.error("Error fetching souvenirs:", error);
     }
@@ -82,7 +81,6 @@ function SouvenirHandlerPage({ storeId, storeName }: SouvenirHandlerPageProps) {
             store_id: storeId,
           },
         ]);
-        console.log(souvenirs);
       }
     } catch (error) {
       console.error("Error creating souvenir:", error);

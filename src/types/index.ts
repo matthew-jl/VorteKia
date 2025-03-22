@@ -130,3 +130,8 @@ export interface Message {
   text: string;
   timestamp: string; // or string if you prefer ISO date string
 }
+
+export interface MessageWithSenderName {
+  message: Message;
+  sender_name: string;
+}

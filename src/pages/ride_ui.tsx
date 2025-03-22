@@ -104,7 +104,6 @@ function RideUIComponent() {
 
       // Update virtual balance
       const newBalance = (currentBalance - ridePrice).toString();
-      console.log(newBalance);
       const balanceResponse = await invoke<string>("update_customer_data", {
         customerId: uid,
         name: null,

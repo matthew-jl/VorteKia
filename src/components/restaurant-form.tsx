@@ -117,8 +117,6 @@ export function RestaurantForm({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (isUpdate && editingRestaurant) {
-      console.log(values.closing_time);
-      console.log(typeof values.closing_time);
       updateRestaurant(
         editingRestaurant.restaurant_id,
         values.name,

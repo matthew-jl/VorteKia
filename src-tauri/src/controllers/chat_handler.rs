@@ -1,10 +1,19 @@
 // src-tauri/src/handler/chat_handler.rs
 
 use chrono::{FixedOffset, NaiveDateTime, Utc};
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, RelationTrait, Set};
-use entity::{chat, message, chat_member};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, RelationTrait, Set, ModelTrait};
+use entity::{chat, chat_member, customer, message, staff};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::{ApiResponse, AppState, cache_get, cache_set, cache_delete};
+use futures::{future::join_all}; 
+
+// Define a new struct to hold message data with sender name
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct MessageWithSenderName {
+    pub message: message::Model,
+    pub sender_name: String,
+}
 
 pub struct ChatHandler;
 
@@ -73,11 +82,11 @@ impl ChatHandler {
     pub async fn get_messages(
         state: &AppState,
         chat_id: String,
-    ) -> Result<ApiResponse<Vec<message::Model>>, String> {
+    ) -> Result<ApiResponse<Vec<MessageWithSenderName>>, String> { // Return ApiResponse<Vec<MessageWithSenderName>>
         let cache_key = format!("get_messages_chat_{}", chat_id);
 
-        if let Some(cached_messages) = cache_get::<Vec<message::Model>>(&state.redis_pool, &cache_key).await {
-            println!("Cache hit: Returning messages for chat {} from Redis", chat_id);
+        if let Some(cached_messages) = cache_get::<Vec<MessageWithSenderName>>(&state.redis_pool, &cache_key).await {
+            println!("Cache hit: Returning messages with sender names for chat {} from Redis", chat_id);
             return Ok(ApiResponse::success(cached_messages));
         }
 
@@ -88,11 +97,60 @@ impl ChatHandler {
             .await
         {
             Ok(messages) => {
-                cache_set(&state.redis_pool, &cache_key, &messages, 30).await; // Shorter cache for messages
-                Ok(ApiResponse::success(messages))
+                // println!("Raw messages retrieved for chat {} (count: {}):", chat_id, messages.len());
+                // for (index, msg) in messages.iter().enumerate() {
+                //     println!(
+                //         "[{}] Message ID: {}, Timestamp: {:?}, Content: {:?}",
+                //         index, msg.message_id, msg.timestamp, msg.text
+                //     );
+                // }
+
+                let messages_with_names_futures = messages.into_iter().map(|message| async { // Changed variable name for clarity
+                    let sender_name = Self::get_sender_name(state, &message).await?;
+                    Ok(MessageWithSenderName {
+                        message,
+                        sender_name,
+                    })
+                });
+
+                let results: Vec<Result<MessageWithSenderName, String>> = join_all(messages_with_names_futures).await;
+                let messages_with_names: Result<Vec<MessageWithSenderName>, String> = results.into_iter().collect(); // Convert Vec<Result<...>> to Result<Vec<...>>
+
+
+                match messages_with_names { // Handle the Result<Vec<MessageWithSenderName>, String>
+                    Ok(messages_with_names) => {
+                        // println!("Messages with sender names for chat {} (count: {}):", chat_id, messages_with_names.len());
+                        // for (index, msg_with_name) in messages_with_names.iter().enumerate() {
+                        //     println!(
+                        //         "[{}] Message ID: {}, Timestamp: {:?}, Content: {:?}, Sender: {}",
+                        //         index, msg_with_name.message.message_id, msg_with_name.message.timestamp, 
+                        //         msg_with_name.message.text, msg_with_name.sender_name
+                        //     );
+                        // }
+
+                        cache_set(&state.redis_pool, &cache_key, &messages_with_names, 30).await;
+                        Ok(ApiResponse::success(messages_with_names))
+                    },
+                    Err(err) => Err(err), // Propagate error from get_sender_name calls
+                }
+            } 
+            Err(err) => {
+                Err(format!("Database error fetching messages: {}", err))
             }
-            Err(err) => Err(format!("Error fetching messages for chat {}: {}", chat_id, err)),
         }
+    }
+
+    // Helper function to get sender name (Customer or Staff)
+    async fn get_sender_name(state: &AppState, message: &message::Model) -> Result<String, String> {
+        // Try to fetch as Customer first
+        if let Some(customer) = message.find_related(customer::Entity).one(&state.db).await.map_err(|e| format!("DB Error: {}", e))? {
+            return Ok(customer.name);
+        }
+        // If not Customer, try to fetch as Staff
+        if let Some(staff) = message.find_related(staff::Entity).one(&state.db).await.map_err(|e| format!("DB Error: {}", e))? {
+            return Ok(staff.name);
+        }
+        Ok("Unknown Sender".to_string()) // Default name if not found in either table
     }
 
     // Save message data (send a new message)

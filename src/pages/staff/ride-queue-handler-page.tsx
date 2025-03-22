@@ -68,7 +68,6 @@ function RideQueueHandlerPage({ rideId, rideName }: RideQueueHandlerPageProps) {
             )
           )
         );
-        console.log("Fetched ride queues:", response.data);
       } else {
         console.error("Error fetching ride queues:", response.message);
       }

@@ -12,7 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Send, Users } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 
-import { ApiResponse, Chat, Message as MessageType } from "@/types"; // Import Chat and Message types from "@/types"
+import {
+  ApiResponse,
+  Chat,
+  Message as MessageType,
+  MessageWithSenderName,
+} from "@/types"; // Import Chat and Message types from "@/types"
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -25,7 +30,7 @@ function GroupChatPageUI() {
   const [loading, setLoading] = useState(true);
   const [chats, setChats] = useState<Chat[]>([]); // Use Chat interface from "@/types"
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null); // Use Chat interface from "@/types"
-  const [messages, setMessages] = useState<MessageType[]>([]); // Use Message interface from "@/types"
+  const [messages, setMessages] = useState<MessageWithSenderName[]>([]); // Use Message interface from "@/types"
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -40,7 +45,7 @@ function GroupChatPageUI() {
 
     try {
       setLoading(true);
-      const response = await invoke<ApiResponse<MessageType[]>>(
+      const response = await invoke<ApiResponse<MessageWithSenderName[]>>(
         "get_messages",
         {
           chatId: selectedChat.chat_id,
@@ -49,6 +54,7 @@ function GroupChatPageUI() {
 
       if (response.status === "success") {
         setMessages(response.data || []);
+        console.log(response.data);
       } else {
         console.error("Failed to fetch messages:", response.message);
         toast.error(response.message || "Failed to fetch messages");
@@ -298,11 +304,13 @@ function GroupChatPageUI() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {messages.map((message) => (
+                    {messages.map((messageWithName) => (
                       <ChatMessage
-                        key={message.message_id}
-                        message={message}
-                        isOwnMessage={message.sender_id === staffId}
+                        key={messageWithName.message.message_id}
+                        message={messageWithName}
+                        isOwnMessage={
+                          messageWithName.message.sender_id === staffId
+                        }
                       />
                     ))}
                     <div ref={messagesEndRef} />

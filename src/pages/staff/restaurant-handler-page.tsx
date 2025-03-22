@@ -59,7 +59,6 @@ function RestaurantHandlerPage() {
         "view_restaurants"
       ); // Invoke view_restaurants
       setRestaurants(response.data || []);
-      console.log(response.data);
     } catch (error) {
       console.error("Unexpected error:", error);
     }
@@ -110,7 +109,6 @@ function RestaurantHandlerPage() {
             status,
           }, // Construct Restaurant object
         ]);
-        console.log(restaurants);
       }
     } catch (error) {
       console.error("Unexpected error:", error);

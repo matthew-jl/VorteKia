@@ -123,7 +123,6 @@ export function RideForm({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (isUpdate && editingRide) {
-      console.log(typeof values.photo);
       updateRide(
         editingRide.ride_id,
         values.status,

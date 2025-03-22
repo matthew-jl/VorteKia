@@ -1,27 +1,28 @@
 // src/components/chat-message.tsx
 "use client";
 import { formatDistanceToNow } from "date-fns";
-import { Message } from "@/types"; // Import Message type from "@/types"
+import { Message, MessageWithSenderName } from "@/types"; // Import Message type from "@/types"
 
 interface ChatMessageProps {
-  message: Message; // Use Message interface from "@/types"
+  message: MessageWithSenderName; // Use Message interface from "@/types"
   isOwnMessage: boolean;
 }
 
 export function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
   // Format the timestamp
-  const formattedTime = formatDistanceToNow(new Date(message.timestamp), {
-    addSuffix: true,
-    includeSeconds: true,
-  });
+  const formattedTime = formatDistanceToNow(
+    new Date(message.message.timestamp),
+    {
+      addSuffix: true,
+      includeSeconds: true,
+    }
+  );
 
   return (
     <div className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
       <div className={`max-w-[80%] ${isOwnMessage ? "order-1" : "order-none"}`}>
         {!isOwnMessage ? (
-          <div className="text-sm font-medium mb-1">
-            Staff {message.sender_id}
-          </div>
+          <div className="text-sm font-medium mb-1">{message.sender_name}</div>
         ) : null}
         <div className="flex items-end gap-2">
           <div
@@ -31,7 +32,9 @@ export function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
                 : "bg-muted rounded-tl-none"
             }`}
           >
-            <p className="whitespace-pre-wrap break-words">{message.text}</p>{" "}
+            <p className="whitespace-pre-wrap break-words">
+              {message.message.text}
+            </p>{" "}
             {/* Use message.text */}
           </div>
         </div>

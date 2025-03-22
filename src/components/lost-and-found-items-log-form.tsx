@@ -178,7 +178,6 @@ export function LostAndFoundItemsLogForm({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (isUpdate && editingLog) {
-      console.log(values.image);
       updateLog(
         editingLog.log_id,
         values.status,

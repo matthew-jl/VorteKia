@@ -38,7 +38,6 @@ function StaffHandlerPage() {
         "view_staff_accounts"
       ); // Invoke view_staff_accounts
       setStaffs(response.data || []);
-      console.log(response.data);
     } catch (error) {
       console.error("Unexpected error:", error);
     }
@@ -71,7 +70,6 @@ function StaffHandlerPage() {
           ...prevStaffs,
           { staff_id: response.data!, email, name, role }, // Construct Staff object
         ]);
-        console.log(staffs);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -86,7 +84,6 @@ function StaffHandlerPage() {
     role: string
   ) {
     try {
-      console.log(staff_id, email, name, role);
       const response = await invoke<ApiResponse<string>>("update_staff_data", {
         // Invoke update_staff_data
         staffId: staff_id, // Use staffId as backend expects

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use controllers::chat_handler::ChatHandler;
+use controllers::chat_handler::{ChatHandler, MessageWithSenderName};
 use controllers::lost_and_found_items_log_handler::LostAndFoundItemsLogHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
@@ -794,7 +794,7 @@ async fn save_chat_data(
 async fn get_messages(
     state: State<'_, AppState>,
     chat_id: String,
-) -> Result<ApiResponse<Vec<entity::message::Model>>, String> {
+) -> Result<ApiResponse<Vec<MessageWithSenderName>>, String> {
     ChatHandler::get_messages(&state, chat_id).await
 }
 

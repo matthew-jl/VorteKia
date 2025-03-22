@@ -50,7 +50,6 @@ function RideHandlerPage() {
     try {
       const response = await invoke<ApiResponse<Ride[]>>("view_rides");
       setRides(response.data || []);
-      console.log(response.data);
     } catch (error) {
       console.error("Unexpected error:", error);
     }

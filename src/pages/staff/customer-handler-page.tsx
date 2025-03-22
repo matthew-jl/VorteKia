@@ -38,7 +38,6 @@ function CustomerHandlerPage() {
         "view_customer_accounts"
       );
       setCustomers(response.data || []);
-      console.log(response.data);
     } catch (error) {
       console.error("Unexpected error:", error);
     }
@@ -63,7 +62,6 @@ function CustomerHandlerPage() {
           ...prevCustomers,
           { customer_id: response.data!, name, virtual_balance },
         ]);
-        console.log(customers);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
