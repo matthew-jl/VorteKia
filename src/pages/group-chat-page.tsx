@@ -28,88 +28,123 @@ function GroupChatPageUI() {
   const navigate = useNavigate();
   const { isLoggedIn, staffId, staffName } = useStaffUser();
   const [loading, setLoading] = useState(true);
-  const [chats, setChats] = useState<Chat[]>([]); // Use Chat interface from "@/types"
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null); // Use Chat interface from "@/types"
-  const [messages, setMessages] = useState<MessageWithSenderName[]>([]); // Use Message interface from "@/types"
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [messages, setMessages] = useState<MessageWithSenderName[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [pollingMessages, setPollingMessages] = useState(false); // Tracks polling without showing loading screen
+  const messageInputRef = useRef<HTMLInputElement>(null);
+  const prevMessagesLengthRef = useRef(0);
 
   useEffect(() => {
     setLoading(false);
   }, [isLoggedIn]);
 
-  const fetchMessages = useCallback(async () => {
-    // useCallback here
-    if (!selectedChat) return;
+  // Fetch group chats
+  const fetchGroupChats = useCallback(async () => {
+    if (!staffId) return;
 
     try {
       setLoading(true);
-      const response = await invoke<ApiResponse<MessageWithSenderName[]>>(
-        "get_messages",
-        {
-          chatId: selectedChat.chat_id,
-        }
-      );
-
+      const response = await invoke<ApiResponse<Chat[]>>("view_chats", {
+        userId: staffId,
+      });
       if (response.status === "success") {
-        setMessages(response.data || []);
-        console.log(response.data);
+        setChats(response.data || []);
       } else {
-        console.error("Failed to fetch messages:", response.message);
-        toast.error(response.message || "Failed to fetch messages");
+        console.error("Failed to fetch group chats:", response.message);
+        toast.error(response.message || "Failed to fetch group chats");
       }
     } catch (error: any) {
-      console.error("Error fetching messages:", error);
-      toast.error("Error fetching messages: " + error.message);
+      console.error("Error fetching group chats:", error);
+      toast.error("Error fetching group chats: " + error.message);
     } finally {
       setLoading(false);
     }
-  }, [selectedChat]); // Dependency array includes selectedChat
+  }, [staffId]);
 
-  // Fetch group chats
-  useEffect(() => {
-    const fetchGroupChats = async () => {
-      if (!staffId) return;
+  const fetchMessages = useCallback(
+    async (isInitialLoad: boolean = false) => {
+      if (!selectedChat) return;
 
       try {
-        setLoading(true);
-        const response = await invoke<ApiResponse<Chat[]>>("view_chats", {
-          // Call view_chats backend command
-          userId: staffId, // Pass staffId as user_id
-        });
+        if (isInitialLoad) setLoading(true);
+        else setPollingMessages(true);
+        const response = await invoke<ApiResponse<MessageWithSenderName[]>>(
+          "get_messages",
+          {
+            chatId: selectedChat.chat_id,
+          }
+        );
 
         if (response.status === "success") {
-          setChats(response.data || []);
+          const newMessages = response.data || [];
+          setMessages(response.data || []);
+          // Scroll only if new messages are added
+          if (newMessages.length > prevMessagesLengthRef.current) {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          }
+          prevMessagesLengthRef.current = newMessages.length;
         } else {
-          console.error("Failed to fetch group chats:", response.message);
-          toast.error(response.message || "Failed to fetch group chats");
+          console.error("Failed to fetch messages:", response.message);
+          toast.error(response.message || "Failed to fetch messages");
         }
       } catch (error: any) {
-        console.error("Error fetching group chats:", error);
-        toast.error("Error fetching group chats: " + error.message);
+        console.error("Error fetching messages:", error);
+        if (isInitialLoad)
+          toast.error("Error fetching messages: " + error.message);
       } finally {
-        setLoading(false);
+        if (isInitialLoad) setLoading(false);
+        else setPollingMessages(false);
       }
-    };
+    },
+    [selectedChat]
+  );
 
+  // Initial fetch group chats
+  useEffect(() => {
     if (isLoggedIn()) {
-      // Fetch chats only if logged in
       fetchGroupChats();
     }
-  }, [staffId, isLoggedIn]);
+  }, [isLoggedIn, fetchGroupChats]);
 
   // Fetch messages for selected chat
   useEffect(() => {
     if (selectedChat) {
-      fetchMessages(); // Call the useCallback fetchMessages here
+      fetchMessages(true); // Call the useCallback fetchMessages here
+    }
+  }, [selectedChat, fetchMessages]);
+
+  // Polling for new messages every 2 seconds
+  useEffect(() => {
+    if (selectedChat) {
+      pollingIntervalRef.current = setInterval(() => {
+        fetchMessages(false);
+        console.log("fetch");
+      }, 2000); // 2 seconds
+
+      // Cleanup interval on unmount or when selectedChat changes
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+      };
     }
   }, [selectedChat, fetchMessages]);
 
   // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // useEffect(() => {
+  //   if (
+  //     messageInputRef.current &&
+  //     document.activeElement === messageInputRef.current
+  //   ) {
+  //     messageInputRef.current.focus();
+  //   }
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages]);
 
   // Handle sending a new message
   const handleSendMessage = async () => {
@@ -129,7 +164,8 @@ function GroupChatPageUI() {
 
       if (response.status === "success") {
         setNewMessage("");
-        fetchMessages(); // Refresh messages after sending
+        await fetchMessages(); // Refresh messages after sending
+        await fetchGroupChats();
       } else {
         console.error("Failed to send message:", response.message);
         toast.error(response.message || "Failed to send message");
@@ -328,6 +364,7 @@ function GroupChatPageUI() {
                   }}
                 >
                   <Input
+                    ref={messageInputRef}
                     placeholder="Type a message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}

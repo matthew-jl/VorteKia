@@ -85,10 +85,10 @@ impl ChatHandler {
     ) -> Result<ApiResponse<Vec<MessageWithSenderName>>, String> { // Return ApiResponse<Vec<MessageWithSenderName>>
         let cache_key = format!("get_messages_chat_{}", chat_id);
 
-        if let Some(cached_messages) = cache_get::<Vec<MessageWithSenderName>>(&state.redis_pool, &cache_key).await {
-            println!("Cache hit: Returning messages with sender names for chat {} from Redis", chat_id);
-            return Ok(ApiResponse::success(cached_messages));
-        }
+        // if let Some(cached_messages) = cache_get::<Vec<MessageWithSenderName>>(&state.redis_pool, &cache_key).await {
+        //     println!("Cache hit: Returning messages with sender names for chat {} from Redis", chat_id);
+        //     return Ok(ApiResponse::success(cached_messages));
+        // }
 
         match message::Entity::find()
             .filter(message::Column::ChatId.eq(chat_id.clone()))
@@ -169,7 +169,7 @@ impl ChatHandler {
         let new_message = message::ActiveModel {
             message_id: sea_orm::ActiveValue::Set(message_id),
             chat_id: sea_orm::ActiveValue::Set(chat_id.clone()),
-            sender_id: sea_orm::ActiveValue::Set(sender_id),
+            sender_id: sea_orm::ActiveValue::Set(sender_id.clone()),
             text: sea_orm::ActiveValue::Set(text.clone()),
             timestamp: sea_orm::ActiveValue::Set(jakarta_time),
             ..Default::default()
@@ -179,7 +179,10 @@ impl ChatHandler {
             Ok(_) => {
                 // Update last message info in chat table
                 Self::update_last_message_info(state, chat_id.clone(), text, jakarta_time).await?;
-                cache_delete(&state.redis_pool, &format!("get_messages_chat_{}", chat_id)).await; // Invalidate message cache
+                // Invalidate message cache
+                cache_delete(&state.redis_pool, &format!("get_messages_chat_{}", chat_id)).await;
+                // Invalidate cache for chats for sender
+                cache_delete(&state.redis_pool, &format!("view_chats_user_{}", sender_id)).await;
                 Ok(ApiResponse::success("Message sent successfully".to_string()))
             }
             Err(err) => Err(format!("Error sending message: {}", err)),

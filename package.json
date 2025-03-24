@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri-dev-2": "tauri dev --config ./src-tauri/tauri.conf.2.json"
   },
   "dependencies": {
     "@cloudinary/react": "^1.14.1",
