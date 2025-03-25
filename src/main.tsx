@@ -12,6 +12,8 @@ import RestaurantUIStaff from "./pages/restaurant_ui_staff";
 import RideUIStaff from "./pages/ride_ui_staff";
 import { LoadingScreen } from "./components/loading-screen";
 import GroupChatPage from "./pages/group-chat-page";
+import CustomerServiceChatPage from "./pages/customer-service-chat-page";
+import OfficialAccountChatPage from "./pages/official-account-chat-page";
 
 function MainPage() {
   const navigate = useNavigate();
@@ -57,6 +59,14 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <Route path="/staff" element={<StaffUI />} />
       <Route path="/customer" element={<CustomerUI />} />
       <Route path="/chat" element={<GroupChatPage />} />
+      <Route
+        path="/chat/customer-service"
+        element={<CustomerServiceChatPage />}
+      />
+      <Route
+        path="/chat/official-account"
+        element={<OfficialAccountChatPage />}
+      />
     </Routes>
   </BrowserRouter>
 );

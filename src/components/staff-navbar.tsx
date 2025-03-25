@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Bell, MessageSquare } from "lucide-react";
+import { Bell, MessageSquare, MessageSquareQuote } from "lucide-react";
 import { StaffLoginForm } from "@/components/staff-login-form";
 import { useStaffUser } from "@/context/staff-user-context";
 import { invoke } from "@tauri-apps/api/core";
@@ -58,6 +58,10 @@ export function StaffNavbar({}: StaffNavbarProps) {
     navigate("/chat");
   };
 
+  const navigateToOfficialAccountChatPage = () => {
+    navigate("/chat/official-account");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -69,6 +73,18 @@ export function StaffNavbar({}: StaffNavbarProps) {
         <div className="flex items-center gap-3">
           {isLoggedIn() ? (
             <>
+              {staffRole === "CustomerServiceStaff" ||
+                (staffRole === "CustomerServiceManager" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full"
+                    aria-label="Official Account Chat"
+                    onClick={navigateToOfficialAccountChatPage}
+                  >
+                    <MessageSquareQuote className="h-5 w-5" />
+                  </Button>
+                ))}
               <Button
                 variant="ghost"
                 size="icon"

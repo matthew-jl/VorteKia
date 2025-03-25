@@ -1,5 +1,5 @@
 use anyhow::Result;
-use controllers::chat_handler::{ChatHandler, MessageWithSenderName};
+use controllers::chat_handler::{ChatHandler, ChatWithCustomerName, MessageWithSenderName};
 use controllers::lost_and_found_items_log_handler::LostAndFoundItemsLogHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
@@ -825,6 +825,22 @@ async fn get_chat_members( // Example additional command
     ChatHandler::get_chat_members(&state, chat_id).await
 }
 
+#[tauri::command]
+async fn get_customer_service_chat(
+    state: State<'_, AppState>,
+    customer_id: String,
+) -> Result<ApiResponse<entity::chat::Model>, String> {
+    ChatHandler::get_customer_service_chat(&state, customer_id).await
+}
+
+// NEW COMMAND: get_customer_chats_for_staff
+#[tauri::command]
+async fn view_customer_chats_for_staff( // New command
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<ChatWithCustomerName>>, String> {
+    ChatHandler::get_customer_chats_for_staff(&state).await // Call new handler function
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -865,7 +881,7 @@ pub fn run() {
             view_souvenirs, get_souvenir_details, save_souvenir_data, update_souvenir_data, update_souvenir_stock, delete_souvenir_data,
             view_order_souvenirs, view_order_souvenirs_by_customer, get_order_souvenir_details, save_order_souvenir_data, delete_order_souvenir_data,
             view_logs, save_log_data, update_log_data, delete_log_data,
-            view_chats, get_chat_details, save_chat_data, get_messages, save_message_data, save_chat_member_data, get_chat_members,
+            view_chats, get_chat_details, save_chat_data, get_messages, save_message_data, save_chat_member_data, get_chat_members, get_customer_service_chat, view_customer_chats_for_staff,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -123,6 +123,11 @@ export interface Chat {
   created_at: string; // or string if you prefer ISO date string
 }
 
+export interface ChatWithCustomerName {
+  chat: Chat;
+  customer_name: string;
+}
+
 export interface Message {
   message_id: string;
   chat_id: string;

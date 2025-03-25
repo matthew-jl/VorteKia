@@ -1,7 +1,7 @@
 // src-tauri/src/handler/chat_handler.rs
 
 use chrono::{FixedOffset, NaiveDateTime, Utc};
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, RelationTrait, Set, ModelTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, RelationTrait, Set, ModelTrait, QueryResult};
 use entity::{chat, chat_member, customer, message, staff};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -15,9 +15,133 @@ pub struct MessageWithSenderName {
     pub sender_name: String,
 }
 
+// Get Customer Service Chats for Staff with customer names
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub struct ChatWithCustomerName {
+    chat: chat::Model,
+    customer_name: String,
+}
+
 pub struct ChatHandler;
 
 impl ChatHandler {
+    // Get or create customer service chat for customer
+    pub async fn get_customer_service_chat(
+        state: &AppState,
+        customer_id: String,
+    ) -> Result<ApiResponse<chat::Model>, String> {
+        // Define the name for the Customer Service Chat
+        let customer_service_chat_name = "Customer Service";
+
+        // 1. Try to find existing chat_member record for the customer in Customer Service chat
+        let existing_membership = chat_member::Entity::find()
+            .filter(chat_member::Column::UserId.eq(customer_id.clone()))
+            .inner_join(chat::Entity)
+            .filter(chat::Column::Name.eq(customer_service_chat_name))
+            .one(&state.db)
+            .await
+            .map_err(|err| format!("Database error checking chat membership: {}", err))?;
+
+        match existing_membership {
+            Some(membership) => {
+                // Membership exists, return the associated chat
+                let customer_service_chat = membership.find_related(chat::Entity)
+                    .one(&state.db)
+                    .await
+                    .map_err(|err| format!("Database error fetching chat from membership: {}", err))?
+                    .ok_or_else(|| "Chat not found for existing membership".to_string())?;
+                Ok(ApiResponse::success(customer_service_chat))
+            },
+            None => {
+                // 2. No membership exists, create new chat and chat_member
+                let new_chat_id = Uuid::new_v4().to_string();
+                let new_chat = chat::ActiveModel {
+                    chat_id: Set(new_chat_id.clone()),
+                    name: Set(customer_service_chat_name.to_string()),
+                    ..Default::default()
+                };
+
+                let created_chat = chat::Entity::insert(new_chat)
+                    .exec_with_returning(&state.db)
+                    .await
+                    .map_err(|err| format!("Error creating Customer Service chat: {}", err))?;
+
+
+                let new_chat_member_id = Uuid::new_v4().to_string();
+                let new_chat_member = chat_member::ActiveModel {
+                    chat_member_id: Set(new_chat_member_id),
+                    chat_id: Set(new_chat_id),
+                    user_id: Set(customer_id.clone()),
+                    ..Default::default()
+                };
+                chat_member::Entity::insert(new_chat_member).exec(&state.db).await
+                    .map_err(|err| format!("Error creating chat membership: {}", err))?;
+
+
+                Ok(ApiResponse::success(created_chat)) // Return the newly created chat
+            }
+        }
+    }
+
+    // Get Customer Service Chats for Staff (all chats named "Customer Service")
+    pub async fn get_customer_chats_for_staff( // New function
+        state: &AppState,
+    ) -> Result<ApiResponse<Vec<ChatWithCustomerName>>, String> {
+        let cache_key = "view_customer_service_chats_for_staff_cache"; // Separate cache key
+
+        if let Some(cached_chats) = cache_get::<Vec<ChatWithCustomerName>>(&state.redis_pool, &cache_key).await {
+            println!("Cache hit: Returning Customer Service chats for staff from Redis");
+            return Ok(ApiResponse::success(cached_chats));
+        }
+
+        // Fetch all "Customer Service" chats
+        let chats = chat::Entity::find()
+            .filter(chat::Column::Name.eq("Customer Service"))
+            .order_by_asc(chat::Column::CreatedAt)
+            .all(&state.db)
+            .await
+            .map_err(|err| format!("Error fetching Customer Service chats for staff: {}", err))?;
+
+        // Enrich each chat with the customer name
+        let chats_with_names_futures = chats.into_iter().map(|chat| async {
+            let customer_name = Self::get_customer_name(state, &chat).await?;
+            Ok(ChatWithCustomerName {
+                chat,
+                customer_name,
+            })
+        });
+
+        let results: Vec<Result<ChatWithCustomerName, String>> = join_all(chats_with_names_futures).await;
+        let chats_with_names: Result<Vec<ChatWithCustomerName>, String> = results.into_iter().collect();
+
+        match chats_with_names {
+            Ok(chats_with_names) => {
+                cache_set(&state.redis_pool, &cache_key, &chats_with_names, 60).await;
+                Ok(ApiResponse::success(chats_with_names))
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    // Helper function to get customer name for a chat
+    async fn get_customer_name(state: &AppState, chat: &chat::Model) -> Result<String, String> {
+        let chat_member = chat_member::Entity::find()
+            .filter(chat_member::Column::ChatId.eq(chat.chat_id.clone()))
+            .one(&state.db)
+            .await
+            .map_err(|err| format!("Database error fetching chat member: {}", err))?
+            .ok_or_else(|| "No chat member found for this chat".to_string())?;
+
+        let customer = customer::Entity::find()
+            .filter(customer::Column::CustomerId.eq(chat_member.user_id))
+            .one(&state.db)
+            .await
+            .map_err(|err| format!("Database error fetching customer: {}", err))?
+            .ok_or_else(|| "Customer not found for chat member".to_string())?;
+
+        Ok(customer.name)
+    }
+
     // View chats for a specific user (customer or staff)
     pub async fn view_chats(state: &AppState, user_id: String) -> Result<ApiResponse<Vec<chat::Model>>, String> {
         let cache_key = format!("view_chats_user_{}", user_id);
