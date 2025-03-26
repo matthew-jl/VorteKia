@@ -24,6 +24,7 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { AccessRequiredScreen } from "@/components/access-required-screen";
 import { toast } from "sonner";
 import { formatTimestamp } from "@/util/chatTimeFormatter";
+import { formatLastMessage } from "@/util/lastMessageFormatter";
 
 function OfficialAccountChatPageUI() {
   const navigate = useNavigate();
@@ -223,7 +224,9 @@ function OfficialAccountChatPageUI() {
                           </div>
                           {chatWithName.chat.last_message_text && (
                             <p className="text-sm text-muted-foreground truncate">
-                              {chatWithName.chat.last_message_text}
+                              {formatLastMessage(
+                                chatWithName.chat.last_message_text
+                              )}
                             </p>
                           )}
                         </div>
@@ -285,7 +288,8 @@ function OfficialAccountChatPageUI() {
                         key={messageWithName.message.message_id}
                         message={messageWithName}
                         isOwnMessage={
-                          messageWithName.message.sender_id === staffId
+                          messageWithName.sender_name !==
+                          selectedChat.customer_name
                         }
                       />
                     ))}

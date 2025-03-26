@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Users } from "lucide-react";
+import { ArrowLeft, Send, Users } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 import { NotFoundScreen } from "@/components/not-found-screen";
 import { Toaster } from "@/components/ui/sonner";
@@ -16,6 +16,7 @@ import { ApiResponse, MessageWithSenderName, Message, Chat } from "@/types"; // 
 import { invoke } from "@tauri-apps/api/core";
 import { LoadingScreen } from "@/components/loading-screen";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 function CustomerServiceChatPageUI() {
   const { isLoggedIn, uid, customerName } = useUser(); // Use customer context
@@ -25,6 +26,7 @@ function CustomerServiceChatPageUI() {
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(false);
@@ -64,7 +66,14 @@ function CustomerServiceChatPageUI() {
         { chatId: chat.chat_id } // Pass Customer Service Chat ID
       );
       if (response.status === "success") {
-        setMessages(response.data || []);
+        const modifiedMessages = (response.data || []).map((msg) => ({
+          ...msg,
+          sender_name:
+            msg.message.sender_id === uid
+              ? customerName || msg.sender_name
+              : "Customer Service",
+        }));
+        setMessages(modifiedMessages);
       } else {
         console.error(response.message || "Failed to load messages.");
       }
@@ -155,7 +164,16 @@ function CustomerServiceChatPageUI() {
         {/* Chat Window - Similar to Staff UI, but simplified */}
         <div className="flex-1 flex flex-col">
           {/* Chat Header - Display "Customer Service" or similar */}
-          <div className="p-4 border-b flex items-center">
+          <div className="p-4 border-b flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="h-8 w-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Back</span>
+            </Button>
             <div className="flex items-center gap-3">
               <div className="bg-primary/20 h-10 w-10 rounded-full flex items-center justify-center">
                 <Users className="h-5 w-5 text-primary" />

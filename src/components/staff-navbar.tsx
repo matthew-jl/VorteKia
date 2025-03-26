@@ -73,18 +73,18 @@ export function StaffNavbar({}: StaffNavbarProps) {
         <div className="flex items-center gap-3">
           {isLoggedIn() ? (
             <>
-              {staffRole === "CustomerServiceStaff" ||
-                (staffRole === "CustomerServiceManager" && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    aria-label="Official Account Chat"
-                    onClick={navigateToOfficialAccountChatPage}
-                  >
-                    <MessageSquareQuote className="h-5 w-5" />
-                  </Button>
-                ))}
+              {(staffRole === "CustomerServiceStaff" ||
+                staffRole === "CustomerServiceManager") && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Official Account Chat"
+                  onClick={navigateToOfficialAccountChatPage}
+                >
+                  <MessageSquareQuote className="h-5 w-5" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"

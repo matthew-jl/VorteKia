@@ -24,10 +24,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { LoadingScreen } from "@/components/loading-screen";
 import { AccessRequiredScreen } from "@/components/access-required-screen";
 import { formatTimestamp } from "@/util/chatTimeFormatter";
+import { formatLastMessage } from "@/util/lastMessageFormatter";
+import { formatChatName } from "@/util/chatNameFormatter";
 
 function GroupChatPageUI() {
   const navigate = useNavigate();
-  const { isLoggedIn, staffId, staffName } = useStaffUser();
+  const { isLoggedIn, staffId, staffRole } = useStaffUser();
   const [loading, setLoading] = useState(true);
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -54,7 +56,17 @@ function GroupChatPageUI() {
         userId: staffId,
       });
       if (response.status === "success") {
-        setChats(response.data || []);
+        // Modify chat names for MaintenanceManager
+        const modifiedChats = (response.data || []).map((chat) => {
+          if (
+            staffRole === "MaintenanceManager" &&
+            chat.name === "Maintenance OA"
+          ) {
+            return { ...chat, name: "Operational Division (as OA)" };
+          }
+          return chat;
+        });
+        setChats(modifiedChats);
       } else {
         console.error("Failed to fetch group chats:", response.message);
         toast.error(response.message || "Failed to fetch group chats");
@@ -251,7 +263,9 @@ function GroupChatPageUI() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline">
-                          <h3 className="font-medium truncate">{chat.name}</h3>
+                          <h3 className="font-medium truncate">
+                            {formatChatName(chat.name)}
+                          </h3>
                           {chat.last_message_timestamp && ( // Use last_message_timestamp
                             <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
                               {formatTimestamp(chat.last_message_timestamp)}
@@ -260,7 +274,7 @@ function GroupChatPageUI() {
                         </div>
                         {chat.last_message_text && ( // Use last_message_text
                           <p className="text-sm text-muted-foreground truncate">
-                            {chat.last_message_text}
+                            {formatLastMessage(chat.last_message_text)}
                           </p>
                         )}
                       </div>
