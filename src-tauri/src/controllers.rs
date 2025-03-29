@@ -10,3 +10,4 @@ pub mod souvenir_handler;
 pub mod order_souvenir_handler;
 pub mod lost_and_found_items_log_handler;
 pub mod chat_handler;
+pub mod maintenance_schedule_handler;

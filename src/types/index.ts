@@ -140,3 +140,13 @@ export interface MessageWithSenderName {
   message: Message;
   sender_name: string;
 }
+
+export interface MaintenanceSchedule {
+  maintenance_task_id: string;
+  ride_id: string;
+  staff_id: string;
+  description: string | undefined;
+  start_date: string; // ISO 8601 DateTime string
+  end_date: string; // ISO 8601 DateTime string
+  status: string;
+}

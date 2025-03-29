@@ -1,6 +1,7 @@
 use anyhow::Result;
 use controllers::chat_handler::{ChatHandler, ChatWithCustomerName, MessageWithSenderName};
 use controllers::lost_and_found_items_log_handler::LostAndFoundItemsLogHandler;
+use controllers::maintenance_schedule_handler::MaintenanceScheduleHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
 use sea_orm::{Database, DatabaseConnection};
@@ -278,6 +279,11 @@ async fn view_ride_staffs( // New command
     state: State<'_, AppState>,
 ) -> Result<ApiResponse<Vec<entity::staff::Model>>, String> {
     StaffHandler::view_ride_staffs(&state).await // Call the new handler function
+}
+
+#[tauri::command]
+async fn view_maintenance_staffs(state: State<'_, AppState>,) -> Result<ApiResponse<Vec<entity::staff::Model>>, String> {
+  StaffHandler::view_maintenance_staffs(&state).await
 }
 
 #[tauri::command]
@@ -841,6 +847,57 @@ async fn view_customer_chats_for_staff( // New command
     ChatHandler::get_customer_chats_for_staff(&state).await // Call new handler function
 }
 
+// Maintenance Schedule related commands
+#[tauri::command]
+async fn view_maintenance_schedules(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<entity::maintenance_schedule::Model>>, String> {
+    MaintenanceScheduleHandler::view_maintenance_schedules(&state).await
+}
+
+#[tauri::command]
+async fn view_maintenance_schedule_by_staff(
+    state: State<'_, AppState>,
+    staff_id: String,
+) -> Result<ApiResponse<Vec<entity::maintenance_schedule::Model>>, String> {
+    MaintenanceScheduleHandler::view_maintenance_schedule_by_staff(&state, staff_id).await
+}
+
+#[tauri::command]
+async fn save_maintenance_schedule_data(
+    state: State<'_, AppState>,
+    ride_id: String,
+    staff_id: String,
+    description: Option<String>,
+    start_date: String,
+    end_date: String,
+    status: String,
+) -> Result<ApiResponse<String>, String> {
+    MaintenanceScheduleHandler::save_maintenance_schedule_data(&state, ride_id, staff_id, description, start_date, end_date, status).await
+}
+
+#[tauri::command]
+async fn update_maintenance_schedule_data(
+    state: State<'_, AppState>,
+    maintenance_task_id: String,
+    ride_id: Option<String>,
+    staff_id: Option<String>,
+    description: Option<Option<String>>, // Match Option<Option<String>> for nullable update
+    start_date: Option<String>,
+    end_date: Option<String>,
+    status: Option<String>,
+) -> Result<ApiResponse<String>, String> {
+    MaintenanceScheduleHandler::update_maintenance_schedule_data(&state, maintenance_task_id, ride_id, staff_id, description, start_date, end_date, status).await
+}
+
+#[tauri::command]
+async fn delete_maintenance_schedule_data(
+    state: State<'_, AppState>,
+    maintenance_task_id: String,
+) -> Result<String, String> {
+    MaintenanceScheduleHandler::delete_maintenance_schedule_data(&state, maintenance_task_id).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -871,7 +928,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_ui_name_from_config,
             customer_login, get_customer_details, view_customer_accounts, save_customer_data, update_customer_data, top_up_virtual_balance, delete_customer_data,
-            staff_login, get_staff_details, get_staff_details_by_email, view_staff_accounts, view_ride_staffs, save_staff_data, update_staff_data, delete_staff_data,
+            staff_login, get_staff_details, get_staff_details_by_email, view_staff_accounts, view_ride_staffs, view_maintenance_staffs, save_staff_data, update_staff_data, delete_staff_data,
             view_restaurants, get_restaurant_details, save_restaurant_data, update_restaurant_data, delete_restaurant_data,
             view_menu_items, get_menu_item_details, save_menu_item_data, update_menu_item_data, delete_menu_item_data,
             view_order_restaurants, view_order_restaurants_by_customer, save_order_restaurant_data, update_order_restaurant_status, delete_order_restaurant_data,
@@ -882,6 +939,7 @@ pub fn run() {
             view_order_souvenirs, view_order_souvenirs_by_customer, get_order_souvenir_details, save_order_souvenir_data, delete_order_souvenir_data,
             view_logs, save_log_data, update_log_data, delete_log_data,
             view_chats, get_chat_details, save_chat_data, get_messages, save_message_data, save_chat_member_data, get_chat_members, get_customer_service_chat, view_customer_chats_for_staff,
+            view_maintenance_schedules, view_maintenance_schedule_by_staff, save_maintenance_schedule_data, update_maintenance_schedule_data, delete_maintenance_schedule_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

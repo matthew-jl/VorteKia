@@ -8,6 +8,7 @@ import { StaffNavbar } from "@/components/staff-navbar";
 import { AccessRequiredScreen } from "@/components/access-required-screen";
 import StoreHandlerPage from "./staff/store-handler-page";
 import LostAndFoundItemsLogHandlerPage from "./staff/lost-and-found-items-log-handler-page";
+import MaintenanceScheduleHandlerPage from "./staff/maintenance-schedule-handler-page";
 
 function StaffUIComponent() {
   const { isLoggedIn, staffRole } = useStaffUser();
@@ -51,6 +52,11 @@ function StaffUIComponent() {
             {staffRole === "LostAndFoundStaff" && (
               <div>
                 <LostAndFoundItemsLogHandlerPage />
+              </div>
+            )}
+            {staffRole === "MaintenanceManager" && (
+              <div>
+                <MaintenanceScheduleHandlerPage />
               </div>
             )}
           </div>
