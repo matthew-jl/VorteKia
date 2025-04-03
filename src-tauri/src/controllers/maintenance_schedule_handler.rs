@@ -1,7 +1,7 @@
 // src-tauri/src/handler/maintenance_schedule_handler.rs
 
 use chrono::NaiveDateTime;
-use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, QueryOrder, ColumnTrait, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, Set};
 use entity::maintenance_schedule::{self, ActiveModel, Model};
 use uuid::Uuid;
 use crate::{ApiResponse, AppState};
@@ -50,6 +50,24 @@ impl MaintenanceScheduleHandler {
         end_date: String,
         status: String,
     ) -> Result<ApiResponse<String>, String> {
+        // **Check if the assigned staff already has an active schedule**
+        let active_statuses = vec!["Pending".to_string(), "Ongoing".to_string()];
+
+        let existing_active_schedule = maintenance_schedule::Entity::find()
+            .filter(
+                Condition::all() // Combine filters
+                    .add(maintenance_schedule::Column::StaffId.eq(staff_id.clone()))
+                    .add(maintenance_schedule::Column::Status.is_in(active_statuses))
+            )
+            .one(&state.db)
+            .await
+            .map_err(|e| format!("Database error checking existing schedule: {}", e))?;
+
+        if existing_active_schedule.is_some() {
+            return Err("This staff member already has an active (Pending or Ongoing) maintenance task.".to_string());
+        }
+
+        // If no active schedule, proceed with creation
         let maintenance_task_id = Uuid::new_v4().to_string();
         // Parse the custom "YYYY-MM-DDTHH:MM" format
         let parsed_start_date = NaiveDateTime::parse_from_str(&start_date, "%Y-%m-%dT%H:%M")

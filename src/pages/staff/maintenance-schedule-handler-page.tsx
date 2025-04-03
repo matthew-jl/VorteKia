@@ -26,6 +26,9 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { MaintenanceScheduleForm } from "@/components/maintenance-schedule-form"; // Import MaintenanceScheduleForm
 import { Edit, Trash2 } from "lucide-react";
+import { useStaffUser } from "@/context/staff-user-context";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 function MaintenanceScheduleHandlerPage() {
   const [maintenanceSchedules, setMaintenanceSchedules] = useState<
@@ -35,12 +38,22 @@ function MaintenanceScheduleHandlerPage() {
     useState<MaintenanceSchedule | null>(null);
   const [rides, setRides] = useState<Ride[]>([]); // State for rides
   const [maintenanceStaffList, setMaintenanceStaffList] = useState<Staff[]>([]); // State for maintenance staff
+  const { staffId, staffRole } = useStaffUser();
 
   async function fetchMaintenanceSchedules() {
     try {
-      const response = await invoke<ApiResponse<MaintenanceSchedule[]>>(
-        "view_maintenance_schedules"
-      );
+      let response;
+      if (staffRole === "MaintenanceStaff" && staffId) {
+        // Check if role is MaintenanceStaff and staffId is available
+        response = await invoke<ApiResponse<MaintenanceSchedule[]>>(
+          "view_maintenance_schedule_by_staff",
+          { staffId: staffId } // Pass staffId to backend
+        );
+      } else {
+        response = await invoke<ApiResponse<MaintenanceSchedule[]>>(
+          "view_maintenance_schedules"
+        );
+      }
       setMaintenanceSchedules(response.data || []);
     } catch (error) {
       console.error("Error fetching maintenance schedules:", error);
@@ -85,6 +98,14 @@ function MaintenanceScheduleHandlerPage() {
     end_date: string,
     status: string
   ) {
+    if (staffRole === "MaintenanceStaff") {
+      toast.error("Maintenance Staff cannot create new schedules.");
+      console.error(
+        "Permission denied: Maintenance Staff cannot create schedules."
+      );
+      return; // Stop execution
+    }
+
     try {
       const response = await invoke<ApiResponse<string>>(
         "save_maintenance_schedule_data",
@@ -244,41 +265,43 @@ function MaintenanceScheduleHandlerPage() {
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit</span>
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you absolutely sure?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the maintenance schedule.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    deleteMaintenanceSchedule(
-                                      schedule.maintenance_task_id
-                                    )
-                                  }
+                          {staffRole === "MaintenanceManager" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you absolutely sure?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will
+                                    permanently delete the maintenance schedule.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      deleteMaintenanceSchedule(
+                                        schedule.maintenance_task_id
+                                      )
+                                    }
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -289,6 +312,7 @@ function MaintenanceScheduleHandlerPage() {
           </div>
         </div>
       </div>
+      <Toaster richColors position="top-right" />
     </div>
   );
 }

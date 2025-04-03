@@ -54,7 +54,8 @@ function StaffUIComponent() {
                 <LostAndFoundItemsLogHandlerPage />
               </div>
             )}
-            {staffRole === "MaintenanceManager" && (
+            {(staffRole === "MaintenanceManager" ||
+              staffRole === "MaintenanceStaff") && (
               <div>
                 <MaintenanceScheduleHandlerPage />
               </div>
