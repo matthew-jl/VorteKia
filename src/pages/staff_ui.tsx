@@ -33,18 +33,28 @@ function StaffUIComponent() {
                 <CustomerHandlerPage />
               </div>
             )}
-            {staffRole === "FBSupervisor" && (
+            {(staffRole === "FBSupervisor" ||
+              staffRole === "Chef" ||
+              staffRole === "Waiter" ||
+              staffRole === "CustomerServiceManager" ||
+              staffRole === "CustomerServiceStaff") && (
               <div>
                 <RestaurantHandlerPage />
               </div>
             )}
-            {staffRole === "RideManager" && (
+            {(staffRole === "RideManager" ||
+              staffRole === "RideStaff" ||
+              staffRole === "CustomerServiceManager" ||
+              staffRole === "CustomerServiceStaff" ||
+              staffRole === "CEO" ||
+              staffRole === "COO") && (
               <div>
                 <RideHandlerPage />
               </div>
             )}
             {(staffRole === "RetailManager" ||
-              staffRole === "SalesAssociate") && (
+              staffRole === "SalesAssociate" ||
+              staffRole === "CEO") && (
               <div>
                 <StoreHandlerPage />
               </div>
@@ -55,7 +65,10 @@ function StaffUIComponent() {
               </div>
             )}
             {(staffRole === "MaintenanceManager" ||
-              staffRole === "MaintenanceStaff") && (
+              staffRole === "MaintenanceStaff" ||
+              staffRole === "RideManager" ||
+              staffRole === "CEO" ||
+              staffRole === "COO") && (
               <div>
                 <MaintenanceScheduleHandlerPage />
               </div>

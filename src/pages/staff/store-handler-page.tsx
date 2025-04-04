@@ -37,7 +37,7 @@ function StoreHandlerPage() {
   const souvenirHandlerRef = useRef<HTMLDivElement>(null);
   const { staffRole } = useStaffUser();
 
-  const canEdit = staffRole === "RetailManager";
+  const canEdit = staffRole === "RetailManager" || staffRole === "CEO";
 
   useEffect(() => {
     if (managingSouvenirsForStoreId && souvenirHandlerRef.current) {
@@ -175,7 +175,11 @@ function StoreHandlerPage() {
           Store Management
         </h1>
 
-        <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">
+        <div
+          className={`grid gap-8 ${
+            canEdit ? "md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]" : ""
+          }`}
+        >
           {/* Form Section */}
           {canEdit && (
             <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">

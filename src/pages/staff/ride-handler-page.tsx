@@ -27,6 +27,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { RideForm } from "@/components/ride-form"; // Import RideForm
 import { Edit, Trash2, Users } from "lucide-react"; // Import Users icon for queue
 import RideQueueHandlerPage from "./ride-queue-handler-page";
+import { useStaffUser } from "@/context/staff-user-context";
 
 function RideHandlerPage() {
   const [rides, setRides] = useState<Ride[]>([]); // Use Ride interface array
@@ -38,6 +39,10 @@ function RideHandlerPage() {
   const [staffNames, setStaffNames] = useState<{ [staffId: string]: string }>(
     {}
   );
+  const { staffRole } = useStaffUser();
+
+  const canEdit =
+    staffRole === "RideManager" || staffRole === "CEO" || staffRole === "COO";
 
   useEffect(() => {
     if (managingQueueForRideId && rideQueueHandlerRef.current) {
@@ -207,16 +212,22 @@ function RideHandlerPage() {
           Ride Management
         </h1>
 
-        <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">
+        <div
+          className={`grid gap-8 ${
+            canEdit ? "md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]" : ""
+          }`}
+        >
           {/* Form Section */}
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
-            <RideForm
-              createRide={createRide}
-              updateRide={updateRide}
-              editingRide={editingRide}
-              setEditingRide={setEditingRide}
-            />
-          </div>
+          {canEdit && (
+            <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+              <RideForm
+                createRide={createRide}
+                updateRide={updateRide}
+                editingRide={editingRide}
+                setEditingRide={setEditingRide}
+              />
+            </div>
+          )}
 
           {/* Table Section */}
           <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden p-6">
@@ -232,7 +243,9 @@ function RideHandlerPage() {
                     <TableHead>Location</TableHead>
                     <TableHead>Staff Name</TableHead>
                     <TableHead>Photo</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {canEdit && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -257,62 +270,64 @@ function RideHandlerPage() {
                           />
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingRide(ride)}
-                            className="h-8 w-8"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you absolutely sure?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the ride and its data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteRide(ride.ride_id)}
+                      {canEdit && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingRide(ride)}
+                              className="h-8 w-8"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            aria-label="Manage Queue"
-                            onClick={() =>
-                              setManagingQueueForRideId(ride.ride_id)
-                            }
-                          >
-                            <Users className="h-4 w-4" /> {/* Queue Icon */}
-                            <span className="sr-only">Manage Queue</span>
-                          </Button>
-                        </div>
-                      </TableCell>
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you absolutely sure?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will
+                                    permanently delete the ride and its data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteRide(ride.ride_id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label="Manage Queue"
+                              onClick={() =>
+                                setManagingQueueForRideId(ride.ride_id)
+                              }
+                            >
+                              <Users className="h-4 w-4" /> {/* Queue Icon */}
+                              <span className="sr-only">Manage Queue</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

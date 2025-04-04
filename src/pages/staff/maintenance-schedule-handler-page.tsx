@@ -126,6 +126,7 @@ function MaintenanceScheduleHandlerPage() {
       }
     } catch (error) {
       console.error("Error creating maintenance schedule:", error);
+      toast.error("" + error);
     }
   }
 
@@ -265,7 +266,9 @@ function MaintenanceScheduleHandlerPage() {
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit</span>
                           </Button>
-                          {staffRole === "MaintenanceManager" && (
+                          {(staffRole === "MaintenanceManager" ||
+                            staffRole === "CEO" ||
+                            staffRole === "COO") && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
