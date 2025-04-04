@@ -1,5 +1,5 @@
-use chrono::Utc;
-use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, QueryOrder, ColumnTrait};
+use chrono::{DateTime, Utc};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder};
 use entity::ride_queue::{self, ActiveModel, Model};
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -22,6 +22,26 @@ impl RideQueueHandler {
         match query.all(&state.db).await {
             Ok(ride_queues) => Ok(ApiResponse::success(ride_queues)),
             Err(err) => Err(format!("Error fetching ride queues: {}", err)),
+        }
+    }
+
+    // Get ride queue entries within a time range
+    pub async fn get_ride_queues_in_range(
+        state: &AppState,
+        start_time: DateTime<Utc>,
+        end_time: DateTime<Utc>,
+    ) -> Result<ApiResponse<Vec<Model>>, String> {
+        match ride_queue::Entity::find()
+            .filter(
+                Condition::all()
+                    .add(ride_queue::Column::JoinedAt.gte(start_time.naive_utc()))
+                    .add(ride_queue::Column::JoinedAt.lt(end_time.naive_utc()))
+            )
+            .all(&state.db)
+            .await
+        {
+            Ok(queues) => Ok(ApiResponse::success(queues)),
+            Err(err) => Err(format!("Error fetching ride queues in range: {}", err)),
         }
     }
 

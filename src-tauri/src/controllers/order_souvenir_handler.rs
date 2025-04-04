@@ -1,5 +1,5 @@
-use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+use chrono::{DateTime, Utc};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder};
 use entity::order_souvenir::{self, ActiveModel, Model};
 use uuid::Uuid;
 use crate::{cache_delete, cache_get, cache_set, ApiResponse, AppState};
@@ -47,6 +47,26 @@ impl OrderSouvenirHandler {
         {
             Ok(orders) => Ok(ApiResponse::success(orders)),
             Err(err) => Err(format!("Error fetching souvenir orders for customer: {}", err)),
+        }
+    }
+
+    // Get souvenir orders within a time range
+    pub async fn get_souvenir_orders_in_range(
+        state: &AppState,
+        start_time: DateTime<Utc>,
+        end_time: DateTime<Utc>,
+    ) -> Result<ApiResponse<Vec<Model>>, String> {
+        match order_souvenir::Entity::find()
+            .filter(
+                Condition::all()
+                    .add(order_souvenir::Column::Timestamp.gte(start_time.naive_utc()))
+                    .add(order_souvenir::Column::Timestamp.lt(end_time.naive_utc()))
+            )
+            .all(&state.db)
+            .await
+        {
+            Ok(orders) => Ok(ApiResponse::success(orders)),
+            Err(err) => Err(format!("Error fetching souvenir orders in range: {}", err)),
         }
     }
 

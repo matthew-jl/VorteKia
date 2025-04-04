@@ -1,7 +1,7 @@
 // src-tauri/src/handler/order_restaurant_handler.rs
 
-use chrono::Utc;
-use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, QueryOrder, ColumnTrait, Set};
+use chrono::{DateTime, Utc};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, Set};
 use entity::order_restaurant::{self, ActiveModel, Model};
 use uuid::Uuid;
 use crate::{ApiResponse, AppState};
@@ -40,6 +40,26 @@ impl OrderRestaurantHandler {
         {
             Ok(orders) => Ok(ApiResponse::success(orders)),
             Err(err) => Err(format!("Error fetching orders for customer: {}", err)),
+        }
+    }
+
+    // Get restaurant orders within a time range
+    pub async fn get_restaurant_orders_in_range(
+        state: &AppState,
+        start_time: DateTime<Utc>,
+        end_time: DateTime<Utc>,
+    ) -> Result<ApiResponse<Vec<Model>>, String> {
+        match order_restaurant::Entity::find()
+            .filter(
+                Condition::all()
+                    .add(order_restaurant::Column::Timestamp.gte(start_time.naive_utc())) // Greater than or equal to start_time
+                    .add(order_restaurant::Column::Timestamp.lt(end_time.naive_utc()))    // Less than end_time
+            )
+            .all(&state.db)
+            .await
+        {
+            Ok(orders) => Ok(ApiResponse::success(orders)),
+            Err(err) => Err(format!("Error fetching restaurant orders in range: {}", err)),
         }
     }
 

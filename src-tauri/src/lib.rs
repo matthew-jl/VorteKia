@@ -1,5 +1,6 @@
 use anyhow::Result;
 use controllers::chat_handler::{ChatHandler, ChatWithCustomerName, MessageWithSenderName};
+use controllers::income_report_handler::{IncomeReport, IncomeReportHandler};
 use controllers::lost_and_found_items_log_handler::LostAndFoundItemsLogHandler;
 use controllers::maintenance_schedule_handler::MaintenanceScheduleHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
@@ -898,6 +899,15 @@ async fn delete_maintenance_schedule_data(
     MaintenanceScheduleHandler::delete_maintenance_schedule_data(&state, maintenance_task_id).await
 }
 
+// Income Report Command
+#[tauri::command]
+async fn generate_income_report(
+    state: State<'_, AppState>,
+    period: String,
+) -> Result<ApiResponse<IncomeReport>, String> { // Use IncomeReport struct
+    IncomeReportHandler::generate_income_report(&state, period).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -940,6 +950,7 @@ pub fn run() {
             view_logs, save_log_data, update_log_data, delete_log_data,
             view_chats, get_chat_details, save_chat_data, get_messages, save_message_data, save_chat_member_data, get_chat_members, get_customer_service_chat, view_customer_chats_for_staff,
             view_maintenance_schedules, view_maintenance_schedule_by_staff, save_maintenance_schedule_data, update_maintenance_schedule_data, delete_maintenance_schedule_data,
+            generate_income_report,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

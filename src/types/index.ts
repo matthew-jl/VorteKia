@@ -150,3 +150,44 @@ export interface MaintenanceSchedule {
   end_date: string; // ISO 8601 DateTime string
   status: string;
 }
+
+// Re-define types locally (or import from types/index.ts if moved)
+export interface RestaurantIncome {
+  restaurant_id: string;
+  restaurant_name: string;
+  total_income: number;
+  order_count: number;
+  items_sold: number;
+}
+
+export interface StoreIncome {
+  store_id: string;
+  store_name: string;
+  total_income: number;
+  order_count: number;
+  items_sold: number;
+}
+
+export interface RideIncome {
+  ride_id: string;
+  ride_name: string;
+  total_income: number;
+  ticket_count: number;
+}
+
+export interface IncomeReport {
+  consumption: {
+    total: number;
+    restaurants: RestaurantIncome[];
+  };
+  marketing: {
+    total: number;
+    stores: StoreIncome[];
+  };
+  operations: {
+    total: number;
+    rides: RideIncome[];
+  };
+  grand_total: number;
+  period: string;
+}
