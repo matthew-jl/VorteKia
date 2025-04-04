@@ -1,5 +1,3 @@
-// src-tauri/src/handler/order_restaurant_handler.rs
-
 use chrono::{DateTime, Utc};
 use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, Set};
 use entity::order_restaurant::{self, ActiveModel, Model};

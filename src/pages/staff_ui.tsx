@@ -74,7 +74,9 @@ function StaffUIComponent() {
                 <MaintenanceScheduleHandlerPage />
               </div>
             )}
-            {staffRole === "CFO" && (
+            {(staffRole === "CFO" ||
+              staffRole === "FBSupervisor" ||
+              staffRole === "RetailManager") && (
               <div>
                 <IncomeReportPage />
               </div>
