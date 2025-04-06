@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ApiResponse, RideQueue } from "@/types";
+import { ApiResponse, Customer, RideQueue } from "@/types";
 import {
   Table,
   TableBody,
@@ -50,6 +50,39 @@ const formSchema = z.object({
 
 function RideQueueHandlerPage({ rideId, rideName }: RideQueueHandlerPageProps) {
   const [rideQueues, setRideQueues] = useState<RideQueue[]>([]);
+  const [customerNames, setCustomerNames] = useState<{
+    [customerId: string]: string;
+  }>({});
+
+  async function fetchCustomerName(customerId: string) {
+    if (!customerNames[customerId]) {
+      // Check if name is already fetched
+      try {
+        const response = await invoke<ApiResponse<Customer>>(
+          "get_customer_details",
+          { customerId }
+        );
+        if (response.status === "success" && response.data) {
+          setCustomerNames((prevNames) => ({
+            ...prevNames,
+            [customerId]: response.data!.name,
+          }));
+        } else {
+          console.error("Error fetching customer name:", response.message);
+          setCustomerNames((prevNames) => ({
+            ...prevNames,
+            [customerId]: "Unknown Customer",
+          })); // Fallback name
+        }
+      } catch (error) {
+        console.error("Error invoking customer details:", error);
+        setCustomerNames((prevNames) => ({
+          ...prevNames,
+          [customerId]: "Unknown Customer",
+        })); // Fallback name on error
+      }
+    }
+  }
 
   // Fetch ride queues for the specific ride
   async function fetchRideQueues() {
@@ -79,6 +112,12 @@ function RideQueueHandlerPage({ rideId, rideName }: RideQueueHandlerPageProps) {
   useEffect(() => {
     fetchRideQueues();
   }, [rideId]);
+
+  useEffect(() => {
+    rideQueues.forEach((queue) => {
+      fetchCustomerName(queue.customer_id);
+    });
+  }, [rideQueues]); // Fetch customer names when the queue data updates
 
   // Move queue position up (decrease position)
   async function moveUp(ride_queue_id: string) {
@@ -298,7 +337,7 @@ function RideQueueHandlerPage({ rideId, rideName }: RideQueueHandlerPageProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[150px]">UID</TableHead>
-                    <TableHead>Customer ID</TableHead>
+                    <TableHead>Customer Name</TableHead>
                     <TableHead>Queue Position</TableHead>
                     <TableHead>Joined At</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -310,7 +349,9 @@ function RideQueueHandlerPage({ rideId, rideName }: RideQueueHandlerPageProps) {
                       <TableCell className="font-medium">
                         {queue.ride_queue_id}
                       </TableCell>
-                      <TableCell>{queue.customer_id}</TableCell>
+                      <TableCell>
+                        {customerNames[queue.customer_id] || "Loading..."}
+                      </TableCell>
                       <TableCell>{queue.queue_position}</TableCell>
                       <TableCell>
                         {new Date(queue.joined_at).toLocaleString()}
