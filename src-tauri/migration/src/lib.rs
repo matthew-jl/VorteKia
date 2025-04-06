@@ -15,6 +15,8 @@ mod m20250320_151149_create_chat_table;
 mod m20250320_151226_create_message_table;
 mod m20250320_151241_create_chat_member_table;
 mod m20250326_065633_create_maintenance_schedule_table;
+mod m20250406_094226_create_broadcast_message_table;
+
 
 
 
@@ -41,6 +43,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250320_151226_create_message_table::Migration),
             Box::new(m20250320_151241_create_chat_member_table::Migration),
             Box::new(m20250326_065633_create_maintenance_schedule_table::Migration),
+            Box::new(m20250406_094226_create_broadcast_message_table::Migration),
         ]
     }
 }

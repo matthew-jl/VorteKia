@@ -18,6 +18,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ApiResponse, Customer } from "@/types";
 import { Toaster } from "sonner";
 import { useNavigate } from "react-router";
+import { NotificationPopover } from "./notification-popover";
 
 interface NavbarProps {
   title: string;
@@ -102,14 +103,7 @@ export function Navbar({ title }: NavbarProps) {
               >
                 <MessageSquare className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                aria-label="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-              </Button>
+              <NotificationPopover audience="Customer" />
               <Button variant="default" onClick={logout}>
                 Logout
               </Button>

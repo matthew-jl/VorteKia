@@ -10,6 +10,7 @@ import StoreHandlerPage from "./staff/store-handler-page";
 import LostAndFoundItemsLogHandlerPage from "./staff/lost-and-found-items-log-handler-page";
 import MaintenanceScheduleHandlerPage from "./staff/maintenance-schedule-handler-page";
 import IncomeReportPage from "./staff/income-report-page";
+import BroadcastMessageHandlerPage from "./staff/broadcast-message-handler-page";
 
 function StaffUIComponent() {
   const { isLoggedIn, staffRole } = useStaffUser();
@@ -32,6 +33,12 @@ function StaffUIComponent() {
               staffRole === "CustomerServiceStaff") && (
               <div>
                 <CustomerHandlerPage />
+              </div>
+            )}
+            {(staffRole === "CustomerServiceManager" ||
+              staffRole === "CustomerServiceStaff") && (
+              <div>
+                <BroadcastMessageHandlerPage />
               </div>
             )}
             {(staffRole === "FBSupervisor" ||

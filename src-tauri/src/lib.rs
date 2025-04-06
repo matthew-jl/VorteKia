@@ -1,10 +1,12 @@
 use anyhow::Result;
+use controllers::broadcast_message_handler::BroadcastMessageHandler;
 use controllers::chat_handler::{ChatHandler, ChatWithCustomerName, MessageWithSenderName};
 use controllers::income_report_handler::{IncomeReport, IncomeReportHandler};
 use controllers::lost_and_found_items_log_handler::LostAndFoundItemsLogHandler;
 use controllers::maintenance_schedule_handler::MaintenanceScheduleHandler;
 use deadpool_redis::{redis::cmd, Config as RedisConfig, Pool as RedisPool, Runtime};
 use dotenv::dotenv;
+use entity::broadcast_message;
 use sea_orm::{Database, DatabaseConnection};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -908,6 +910,60 @@ async fn generate_income_report(
     IncomeReportHandler::generate_income_report(&state, period).await
 }
 
+// Broadcast Message related commands
+#[tauri::command]
+async fn view_broadcast_messages(
+    state: State<'_, AppState>,
+) -> Result<ApiResponse<Vec<broadcast_message::Model>>, String> {
+    BroadcastMessageHandler::view_broadcast_messages(&state).await
+}
+
+#[tauri::command]
+async fn view_broadcast_messages_by_audience(
+    state: State<'_, AppState>,
+    target_audience: String,
+) -> Result<ApiResponse<Vec<broadcast_message::Model>>, String> {
+    BroadcastMessageHandler::view_broadcast_messages_by_audience(&state, target_audience).await
+}
+
+#[tauri::command]
+async fn get_broadcast_message_details(
+    state: State<'_, AppState>,
+    broadcast_message_id: String,
+) -> Result<ApiResponse<broadcast_message::Model>, String> {
+    BroadcastMessageHandler::get_broadcast_message_details(&state, broadcast_message_id).await
+}
+
+#[tauri::command]
+async fn save_broadcast_message_data(
+    state: State<'_, AppState>,
+    target_audience: String,
+    content: String,
+    status: String,
+) -> Result<ApiResponse<String>, String> {
+    BroadcastMessageHandler::save_broadcast_message_data(&state, target_audience, content, status).await
+}
+
+#[tauri::command]
+async fn update_broadcast_message_data(
+    state: State<'_, AppState>,
+    broadcast_message_id: String,
+    target_audience: Option<String>,
+    content: Option<String>,
+    status: Option<String>,
+) -> Result<ApiResponse<String>, String> {
+    BroadcastMessageHandler::update_broadcast_message_data(&state, broadcast_message_id, target_audience, content, status).await
+}
+
+#[tauri::command]
+async fn delete_broadcast_message_data(
+    state: State<'_, AppState>,
+    broadcast_message_id: String,
+) -> Result<String, String> {
+    BroadcastMessageHandler::delete_broadcast_message_data(&state, broadcast_message_id).await
+}
+
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -951,6 +1007,7 @@ pub fn run() {
             view_chats, get_chat_details, save_chat_data, get_messages, save_message_data, save_chat_member_data, get_chat_members, get_customer_service_chat, view_customer_chats_for_staff,
             view_maintenance_schedules, view_maintenance_schedule_by_staff, save_maintenance_schedule_data, update_maintenance_schedule_data, delete_maintenance_schedule_data,
             generate_income_report,
+            view_broadcast_messages, view_broadcast_messages_by_audience, get_broadcast_message_details, save_broadcast_message_data, update_broadcast_message_data, delete_broadcast_message_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

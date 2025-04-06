@@ -15,6 +15,7 @@ import { useStaffUser } from "@/context/staff-user-context";
 import { invoke } from "@tauri-apps/api/core";
 import { ApiResponse, Staff } from "@/types";
 import { useNavigate } from "react-router";
+import { NotificationPopover } from "./notification-popover";
 
 interface StaffNavbarProps {}
 
@@ -94,14 +95,7 @@ export function StaffNavbar({}: StaffNavbarProps) {
               >
                 <MessageSquare className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                aria-label="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-              </Button>
+              <NotificationPopover audience="Staff" />
               <Button variant="default" onClick={handleLogoutClick}>
                 Logout
               </Button>

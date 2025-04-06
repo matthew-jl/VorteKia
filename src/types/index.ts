@@ -191,3 +191,11 @@ export interface IncomeReport {
   grand_total: number;
   period: string;
 }
+
+export interface BroadcastMessage {
+  broadcast_message_id: string;
+  target_audience: string; // "Customer" or "Staff"
+  content: string;
+  timestamp: string; // ISO 8601 DateTime string from backend
+  status: string; // "Pending" or "Sent"
+}

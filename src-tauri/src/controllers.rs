@@ -12,3 +12,4 @@ pub mod lost_and_found_items_log_handler;
 pub mod chat_handler;
 pub mod maintenance_schedule_handler;
 pub mod income_report_handler;
+pub mod broadcast_message_handler;
