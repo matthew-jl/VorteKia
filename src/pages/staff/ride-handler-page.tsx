@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ApiResponse, Ride } from "@/types"; // Import Ride interface
+import { ApiResponse, Ride, Staff } from "@/types"; // Import Ride interface
 import {
   Table,
   TableBody,
@@ -27,6 +27,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { RideForm } from "@/components/ride-form"; // Import RideForm
 import { Edit, Trash2, Users } from "lucide-react"; // Import Users icon for queue
 import RideQueueHandlerPage from "./ride-queue-handler-page";
+import { useStaffUser } from "@/context/staff-user-context";
 
 function RideHandlerPage() {
   const [rides, setRides] = useState<Ride[]>([]); // Use Ride interface array
@@ -35,6 +36,13 @@ function RideHandlerPage() {
     string | null
   >(null); // State for queue management
   const rideQueueHandlerRef = useRef<HTMLDivElement>(null);
+  const [staffNames, setStaffNames] = useState<{ [staffId: string]: string }>(
+    {}
+  );
+  const { staffRole } = useStaffUser();
+
+  const canEdit =
+    staffRole === "RideManager" || staffRole === "CEO" || staffRole === "COO";
 
   useEffect(() => {
     if (managingQueueForRideId && rideQueueHandlerRef.current) {
@@ -47,15 +55,51 @@ function RideHandlerPage() {
     try {
       const response = await invoke<ApiResponse<Ride[]>>("view_rides");
       setRides(response.data || []);
-      console.log(response.data);
     } catch (error) {
       console.error("Unexpected error:", error);
+    }
+  }
+
+  async function fetchStaffName(staffId: string) {
+    // Fetch staff name by ID
+    if (!staffNames[staffId]) {
+      // Check if name is already fetched
+      try {
+        const response = await invoke<ApiResponse<Staff>>("get_staff_details", {
+          staffId,
+        });
+        if (response.status === "success" && response.data) {
+          setStaffNames((prevNames) => ({
+            ...prevNames,
+            [staffId]: response.data!.name,
+          }));
+        } else {
+          console.error("Error fetching staff name:", response.message);
+          setStaffNames((prevNames) => ({
+            ...prevNames,
+            [staffId]: "Unknown Staff",
+          })); // Fallback name
+        }
+      } catch (error) {
+        console.error("Error invoking staff details:", error);
+        setStaffNames((prevNames) => ({
+          ...prevNames,
+          [staffId]: "Unknown Staff",
+        })); // Fallback name on error
+      }
     }
   }
 
   useEffect(() => {
     fetchRides();
   }, []);
+
+  useEffect(() => {
+    rides.forEach((ride) => {
+      // Fetch staff names for each ride
+      fetchStaffName(ride.staff_id);
+    });
+  }, [rides]);
 
   // Create a new ride
   async function createRide(
@@ -115,7 +159,7 @@ function RideHandlerPage() {
         price,
         location,
         staffId: staff_id,
-        photo: photo === "" ? null : photo, // Handle empty string as null
+        photo: photo,
       });
 
       if (response.status === "error") {
@@ -168,16 +212,22 @@ function RideHandlerPage() {
           Ride Management
         </h1>
 
-        <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">
+        <div
+          className={`grid gap-8 ${
+            canEdit ? "md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]" : ""
+          }`}
+        >
           {/* Form Section */}
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
-            <RideForm
-              createRide={createRide}
-              updateRide={updateRide}
-              editingRide={editingRide}
-              setEditingRide={setEditingRide}
-            />
-          </div>
+          {canEdit && (
+            <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+              <RideForm
+                createRide={createRide}
+                updateRide={updateRide}
+                editingRide={editingRide}
+                setEditingRide={setEditingRide}
+              />
+            </div>
+          )}
 
           {/* Table Section */}
           <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden p-6">
@@ -191,9 +241,11 @@ function RideHandlerPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Staff ID</TableHead>
+                    <TableHead>Staff Name</TableHead>
                     <TableHead>Photo</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {canEdit && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -206,7 +258,9 @@ function RideHandlerPage() {
                       <TableCell>{ride.status}</TableCell>
                       <TableCell>{ride.price}</TableCell>
                       <TableCell>{ride.location}</TableCell>
-                      <TableCell>{ride.staff_id}</TableCell>
+                      <TableCell>
+                        {staffNames[ride.staff_id] || "Loading..."}
+                      </TableCell>
                       <TableCell>
                         {ride.photo && (
                           <img
@@ -216,62 +270,64 @@ function RideHandlerPage() {
                           />
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingRide(ride)}
-                            className="h-8 w-8"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you absolutely sure?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the ride and its data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteRide(ride.ride_id)}
+                      {canEdit && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingRide(ride)}
+                              className="h-8 w-8"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            aria-label="Manage Queue"
-                            onClick={() =>
-                              setManagingQueueForRideId(ride.ride_id)
-                            }
-                          >
-                            <Users className="h-4 w-4" /> {/* Queue Icon */}
-                            <span className="sr-only">Manage Queue</span>
-                          </Button>
-                        </div>
-                      </TableCell>
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you absolutely sure?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will
+                                    permanently delete the ride and its data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteRide(ride.ride_id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label="Manage Queue"
+                              onClick={() =>
+                                setManagingQueueForRideId(ride.ride_id)
+                              }
+                            >
+                              <Users className="h-4 w-4" /> {/* Queue Icon */}
+                              <span className="sr-only">Manage Queue</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

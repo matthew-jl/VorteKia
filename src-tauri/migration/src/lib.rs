@@ -6,6 +6,15 @@ mod m20250306_111959_create_restaurant_table;
 mod m20250306_112015_create_menu_item_table;
 mod m20250307_114130_create_ride_table;
 mod m20250307_114226_create_ride_queue_table;
+mod m20250310_151947_create_order_restaurant_table;
+mod m20250312_143002_create_store_table;
+mod m20250312_143009_create_souvenir_table;
+mod m20250312_143018_create_order_souvenir_table;
+mod m20250317_105552_create_lost_and_found_items_log_table;
+mod m20250320_151149_create_chat_table;
+mod m20250320_151226_create_message_table;
+mod m20250320_151241_create_chat_member_table;
+mod m20250326_065633_create_maintenance_schedule_table;
 
 
 
@@ -23,6 +32,15 @@ impl MigratorTrait for Migrator {
             Box::new(m20250306_112015_create_menu_item_table::Migration),
             Box::new(m20250307_114130_create_ride_table::Migration),
             Box::new(m20250307_114226_create_ride_queue_table::Migration),
+            Box::new(m20250310_151947_create_order_restaurant_table::Migration),
+            Box::new(m20250312_143002_create_store_table::Migration),
+            Box::new(m20250312_143009_create_souvenir_table::Migration),
+            Box::new(m20250312_143018_create_order_souvenir_table::Migration),
+            Box::new(m20250317_105552_create_lost_and_found_items_log_table::Migration),
+            Box::new(m20250320_151149_create_chat_table::Migration),
+            Box::new(m20250320_151226_create_message_table::Migration),
+            Box::new(m20250320_151241_create_chat_member_table::Migration),
+            Box::new(m20250326_065633_create_maintenance_schedule_table::Migration),
         ]
     }
 }

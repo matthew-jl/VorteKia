@@ -24,10 +24,12 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { CustomerForm } from "@/components/customer-form";
 import { Edit, Trash2 } from "lucide-react";
+import { useStaffUser } from "@/context/staff-user-context";
 
 function CustomerHandlerPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const { staffRole } = useStaffUser();
 
   // Fetch all customers from the backend
   async function fetchCustomers() {
@@ -36,7 +38,6 @@ function CustomerHandlerPage() {
         "view_customer_accounts"
       );
       setCustomers(response.data || []);
-      console.log(response.data);
     } catch (error) {
       console.error("Unexpected error:", error);
     }
@@ -61,7 +62,6 @@ function CustomerHandlerPage() {
           ...prevCustomers,
           { customer_id: response.data!, name, virtual_balance },
         ]);
-        console.log(customers);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -164,7 +164,7 @@ function CustomerHandlerPage() {
                     <TableHead className="w-[100px]">UID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Virtual Balance (IDR)</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {/* <TableHead className="text-right">Actions</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -175,7 +175,7 @@ function CustomerHandlerPage() {
                       </TableCell>
                       <TableCell>{customer.name}</TableCell>
                       <TableCell>{customer.virtual_balance}</TableCell>
-                      <TableCell className="text-right">
+                      {/* <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             variant="ghost"
@@ -222,7 +222,7 @@ function CustomerHandlerPage() {
                             </AlertDialogContent>
                           </AlertDialog>
                         </div>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))}
                 </TableBody>

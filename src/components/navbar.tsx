@@ -17,6 +17,7 @@ import { formatRupiah } from "@/util/currencyFormatter";
 import { invoke } from "@tauri-apps/api/core";
 import { ApiResponse, Customer } from "@/types";
 import { Toaster } from "sonner";
+import { useNavigate } from "react-router";
 
 interface NavbarProps {
   title: string;
@@ -25,6 +26,7 @@ interface NavbarProps {
 export function Navbar({ title }: NavbarProps) {
   const { isLoggedIn, login, logout, customerName, virtualBalance } = useUser();
   const [isTopUpDialogOpen, setIsTopUpDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async (sessionToken: string, customerUid: string) => {
     try {
@@ -48,6 +50,10 @@ export function Navbar({ title }: NavbarProps) {
     } catch (error) {
       console.error("Error invoking get_customer_details:", error);
     }
+  };
+
+  const navigateToCustomerServiceChatPage = () => {
+    navigate("/chat/customer-service");
   };
 
   return (
@@ -92,6 +98,7 @@ export function Navbar({ title }: NavbarProps) {
                 size="icon"
                 className="rounded-full"
                 aria-label="Customer service"
+                onClick={navigateToCustomerServiceChatPage}
               >
                 <MessageSquare className="h-5 w-5" />
               </Button>

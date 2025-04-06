@@ -35,7 +35,7 @@ export function StaffLoginForm({ onLogin }: StaffLoginFormProps) {
       if (response.status === "success") {
         const sessionToken = response.data;
         if (sessionToken) {
-          console.log("Staff Login successful, session token:", sessionToken);
+          console.log("Staff Login successful.");
           onLogin(sessionToken, email); // Call onLogin with session token and email
         } else {
           setError("Login successful but session token is missing.");

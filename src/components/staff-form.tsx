@@ -34,7 +34,6 @@ const roleOptions = [
   "RideManager",
   "MaintenanceStaff",
   "MaintenanceManager",
-  "ConsumptionStaff",
   "FBSupervisor",
   "Chef",
   "Waiter",
@@ -136,7 +135,6 @@ export function StaffForm({
   function onSubmit(values: z.infer<typeof currentSchema>) {
     // Use dynamic schema type
     if (isUpdate && editingStaff) {
-      console.log("Edit Staff");
       updateStaff(
         editingStaff.staff_id,
         values.email,

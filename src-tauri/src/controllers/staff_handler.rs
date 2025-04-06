@@ -88,6 +88,30 @@ impl StaffHandler {
         }
     }
 
+    pub async fn view_ride_staffs(state: &AppState) -> Result<ApiResponse<Vec<Model>>, String> {
+        match staff::Entity::find()
+            .filter(staff::Column::Role.eq("RideStaff")) // Filter by role "RideStaff"
+            .order_by_asc(staff::Column::Name)
+            .all(&state.db)
+            .await
+        {
+            Ok(staff_list) => Ok(ApiResponse::success(staff_list)),
+            Err(err) => Err(format!("Error fetching RideStaff accounts: {}", err)),
+        }
+    }
+
+    pub async fn view_maintenance_staffs(state: &AppState) -> Result<ApiResponse<Vec<Model>>, String> {
+        match staff::Entity::find()
+            .filter(staff::Column::Role.eq("MaintenanceStaff")) // Filter by role "MaintenanceStaff"
+            .order_by_asc(staff::Column::Name)
+            .all(&state.db)
+            .await
+        {
+            Ok(staff_list) => Ok(ApiResponse::success(staff_list)),
+            Err(err) => Err(format!("Error fetching MaintenanceStaff accounts: {}", err)),
+        }
+    }
+
     // Save staff data (create new staff account)
     pub async fn save_staff_data(
         state: &AppState,

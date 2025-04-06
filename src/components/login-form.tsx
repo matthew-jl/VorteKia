@@ -33,7 +33,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       if (response.status === "success") {
         const sessionToken = response.data;
         if (sessionToken) {
-          console.log("Login successful, session token:", sessionToken);
+          console.log("Login successful.");
           onLogin(sessionToken, uid); // Call onLogin with session token and uid
         } else {
           setError("Login successful but session token is missing."); // Should not happen if backend is correct

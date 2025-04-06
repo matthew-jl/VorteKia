@@ -61,3 +61,133 @@ export interface RideQueue {
   customer_id: string;
   queue_position: string; // Decimal as string from backend
 }
+
+export interface OrderRestaurant {
+  // Added OrderRestaurant
+  order_restaurant_id: string;
+  customer_id: string;
+  restaurant_id: string;
+  menu_item_id: string;
+  quantity: number;
+  timestamp: string; // ISO 8601 string
+  status: string;
+}
+
+export interface Store {
+  store_id: string;
+  name: string;
+  photo: string | undefined;
+  opening_time: string; // ISO 8601 time string
+  closing_time: string; // ISO 8601 time string
+  location: string | undefined;
+  status: string;
+}
+
+export interface Souvenir {
+  souvenir_id: string;
+  name: string;
+  photo: string | undefined;
+  price: string;
+  stock: number;
+  store_id: string;
+}
+
+export interface OrderSouvenir {
+  order_souvenir_id: string;
+  customer_id: string;
+  store_id: string;
+  souvenir_id: string;
+  quantity: number;
+  timestamp: string;
+}
+
+export interface LostAndFoundItemsLog {
+  log_id: string;
+  image: string | undefined;
+  name: string;
+  type: string;
+  color: string;
+  last_seen_location: string | undefined;
+  finder: string | undefined;
+  owner: string | undefined;
+  found_location: string | undefined;
+  timestamp: string;
+  status: string;
+}
+
+export interface Chat {
+  chat_id: string;
+  name: string;
+  last_message_text: string | undefined;
+  last_message_timestamp: string | undefined; // or string if you prefer ISO date string
+  created_at: string; // or string if you prefer ISO date string
+}
+
+export interface ChatWithCustomerName {
+  chat: Chat;
+  customer_name: string;
+}
+
+export interface Message {
+  message_id: string;
+  chat_id: string;
+  sender_id: string;
+  text: string;
+  timestamp: string; // or string if you prefer ISO date string
+}
+
+export interface MessageWithSenderName {
+  message: Message;
+  sender_name: string;
+}
+
+export interface MaintenanceSchedule {
+  maintenance_task_id: string;
+  ride_id: string;
+  staff_id: string;
+  description: string | undefined;
+  start_date: string; // ISO 8601 DateTime string
+  end_date: string; // ISO 8601 DateTime string
+  status: string;
+}
+
+// Re-define types locally (or import from types/index.ts if moved)
+export interface RestaurantIncome {
+  restaurant_id: string;
+  restaurant_name: string;
+  total_income: number;
+  order_count: number;
+  items_sold: number;
+}
+
+export interface StoreIncome {
+  store_id: string;
+  store_name: string;
+  total_income: number;
+  order_count: number;
+  items_sold: number;
+}
+
+export interface RideIncome {
+  ride_id: string;
+  ride_name: string;
+  total_income: number;
+  ticket_count: number;
+}
+
+export interface IncomeReport {
+  consumption: {
+    total: number;
+    restaurants: RestaurantIncome[];
+  };
+  marketing: {
+    total: number;
+    stores: StoreIncome[];
+  };
+  operations: {
+    total: number;
+    rides: RideIncome[];
+  };
+  grand_total: number;
+  period: string;
+}

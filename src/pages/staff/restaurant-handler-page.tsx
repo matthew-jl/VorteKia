@@ -25,8 +25,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { RestaurantForm } from "@/components/restaurant-form"; // Import RestaurantForm
-import { Edit, Trash2, Menu, Utensils } from "lucide-react"; // Import Menu icon
+import { Edit, Trash2, Menu, Utensils, Filter } from "lucide-react"; // Import Menu icon
 import MenuItemHandlerPage from "./menu-item-handler-page";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { useStaffUser } from "@/context/staff-user-context";
 
 function RestaurantHandlerPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]); // Use Restaurant interface array
@@ -36,6 +45,10 @@ function RestaurantHandlerPage() {
   const [managingMenuForRestaurantId, setManagingMenuForRestaurantId] =
     useState<string | null>(null); // State to track restaurant for menu management
   const menuItemHandlerRef = useRef<HTMLDivElement>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const { staffRole } = useStaffUser();
+
+  const canEdit = staffRole === "FBSupervisor";
 
   useEffect(() => {
     if (managingMenuForRestaurantId && menuItemHandlerRef.current) {
@@ -50,7 +63,6 @@ function RestaurantHandlerPage() {
         "view_restaurants"
       ); // Invoke view_restaurants
       setRestaurants(response.data || []);
-      console.log(response.data);
     } catch (error) {
       console.error("Unexpected error:", error);
     }
@@ -101,7 +113,6 @@ function RestaurantHandlerPage() {
             status,
           }, // Construct Restaurant object
         ]);
-        console.log(restaurants);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -126,7 +137,7 @@ function RestaurantHandlerPage() {
           // Invoke update_restaurant_data
           restaurantId: restaurant_id, // Backend expects restaurantId
           name,
-          photo: photo === "" ? null : photo, // Handle empty string for photo to null
+          photo: photo,
           openingTime: opening_time,
           closingTime: closing_time,
           cuisineType: cuisine_type,
@@ -186,6 +197,14 @@ function RestaurantHandlerPage() {
     }
   }
 
+  // Filter restaurants based on status
+  const filteredRestaurants = restaurants.filter((restaurant) => {
+    if (statusFilter === "All") return true;
+    return restaurant.status === statusFilter;
+  });
+
+  const statuses = ["All", "Open", "Closed"]; // Filter options
+
   return (
     <div className="relative min-h-screen">
       {/* Background image with overlay */}
@@ -204,19 +223,53 @@ function RestaurantHandlerPage() {
           Restaurant Management
         </h1>
 
-        <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">
+        <div
+          className={`grid gap-8 ${
+            canEdit ? "md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]" : ""
+          }`}
+        >
           {/* Form Section */}
-          <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
-            <RestaurantForm // Use RestaurantForm here
-              createRestaurant={createRestaurant}
-              updateRestaurant={updateRestaurant}
-              editingRestaurant={editingRestaurant}
-              setEditingRestaurant={setEditingRestaurant}
-            />
-          </div>
+          {canEdit && (
+            <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+              <RestaurantForm // Use RestaurantForm here
+                createRestaurant={createRestaurant}
+                updateRestaurant={updateRestaurant}
+                editingRestaurant={editingRestaurant}
+                setEditingRestaurant={setEditingRestaurant}
+              />
+            </div>
+          )}
 
           {/* Table Section */}
           <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden p-6">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="mb-4 flex items-center gap-2"
+                >
+                  <Filter size={18} />
+                  <span>Filter by Status</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Filter by Status</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {statuses.map((status) => (
+                    <Badge
+                      key={status}
+                      variant={statusFilter === status ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => setStatusFilter(status)}
+                    >
+                      {status}
+                    </Badge>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
             <div className="overflow-x-auto">
               <Table>
                 <TableCaption>VorteKia Restaurants</TableCaption>
@@ -230,11 +283,13 @@ function RestaurantHandlerPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Photo</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {canEdit && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {restaurants.map((restaurant) => (
+                  {filteredRestaurants.map((restaurant) => (
                     <TableRow key={restaurant.restaurant_id}>
                       <TableCell className="font-medium">
                         {restaurant.restaurant_id}
@@ -254,67 +309,69 @@ function RestaurantHandlerPage() {
                           />
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingRestaurant(restaurant)}
-                            className="h-8 w-8"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you absolutely sure?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the restaurant and their
-                                  data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    deleteRestaurant(restaurant.restaurant_id)
-                                  }
+                      {canEdit && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingRestaurant(restaurant)}
+                              className="h-8 w-8"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                 >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            aria-label="Manage Menu"
-                            onClick={() =>
-                              setManagingMenuForRestaurantId(
-                                restaurant.restaurant_id
-                              )
-                            }
-                          >
-                            <Utensils className="h-4 w-4" /> {/* Menu Icon */}
-                            <span className="sr-only">Manage Menu</span>
-                          </Button>
-                        </div>
-                      </TableCell>
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you absolutely sure?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will
+                                    permanently delete the restaurant and their
+                                    data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      deleteRestaurant(restaurant.restaurant_id)
+                                    }
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label="Manage Menu"
+                              onClick={() =>
+                                setManagingMenuForRestaurantId(
+                                  restaurant.restaurant_id
+                                )
+                              }
+                            >
+                              <Utensils className="h-4 w-4" /> {/* Menu Icon */}
+                              <span className="sr-only">Manage Menu</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

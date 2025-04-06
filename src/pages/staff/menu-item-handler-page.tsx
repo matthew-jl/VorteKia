@@ -48,7 +48,6 @@ function MenuItemHandlerPage({
         }
       );
       setMenuItems(response.data || []);
-      console.log("Fetched menu items:", response.data);
     } catch (error) {
       console.error("Error fetching menu items:", error);
     }
@@ -88,7 +87,6 @@ function MenuItemHandlerPage({
             restaurant_id: restaurantId,
           },
         ]);
-        console.log(menuItems);
       }
     } catch (error) {
       console.error("Unexpected error creating menu item:", error);
@@ -159,7 +157,7 @@ function MenuItemHandlerPage({
       {/* Background, Content, and Restaurant ID Header (No changes needed in these sections) */}
       <div className="relative z-10 container mx-auto px-4 py-12">
         <h1 className="text-3xl font-bold text-white mb-8 text-center">
-          Menu Item Management - Restaurant: {restaurantName}
+          Menu Item Management - {restaurantName}
         </h1>
 
         <div className="grid gap-8 md:grid-cols-[1fr_1.5fr] lg:grid-cols-[1fr_2fr]">

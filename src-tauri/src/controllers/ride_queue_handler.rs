@@ -1,4 +1,5 @@
-use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, QueryOrder, ColumnTrait};
+use chrono::{DateTime, Utc};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder};
 use entity::ride_queue::{self, ActiveModel, Model};
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -24,6 +25,26 @@ impl RideQueueHandler {
         }
     }
 
+    // Get ride queue entries within a time range
+    pub async fn get_ride_queues_in_range(
+        state: &AppState,
+        start_time: DateTime<Utc>,
+        end_time: DateTime<Utc>,
+    ) -> Result<ApiResponse<Vec<Model>>, String> {
+        match ride_queue::Entity::find()
+            .filter(
+                Condition::all()
+                    .add(ride_queue::Column::JoinedAt.gte(start_time.naive_utc()))
+                    .add(ride_queue::Column::JoinedAt.lt(end_time.naive_utc()))
+            )
+            .all(&state.db)
+            .await
+        {
+            Ok(queues) => Ok(ApiResponse::success(queues)),
+            Err(err) => Err(format!("Error fetching ride queues in range: {}", err)),
+        }
+    }
+
     // Save ride queue data (create new queue entry)
     pub async fn save_ride_queue_data(
         state: &AppState,
@@ -33,10 +54,14 @@ impl RideQueueHandler {
     ) -> Result<ApiResponse<String>, String> {
         let ride_queue_id = Uuid::new_v4().to_string();
 
+        let jakarta_time = Utc::now()
+            .with_timezone(&chrono::FixedOffset::east_opt(7 * 3600).unwrap())
+            .naive_local();
+
         let new_ride_queue = ride_queue::ActiveModel {
             ride_queue_id: sea_orm::ActiveValue::Set(ride_queue_id),
             ride_id: sea_orm::ActiveValue::Set(ride_id),
-            joined_at: sea_orm::ActiveValue::Set(chrono::Utc::now().naive_utc()), // Auto-set to current time
+            joined_at: sea_orm::ActiveValue::Set(jakarta_time), // Auto-set to current time
             customer_id: sea_orm::ActiveValue::Set(customer_id),
             queue_position: sea_orm::ActiveValue::Set(queue_position),
             ..Default::default()

@@ -8,6 +8,12 @@ import RideUI from "./pages/ride_ui";
 import StoreUI from "./pages/store_ui";
 import StaffUI from "./pages/staff_ui";
 import CustomerUI from "./pages/customer_ui";
+import RestaurantUIStaff from "./pages/restaurant_ui_staff";
+import RideUIStaff from "./pages/ride_ui_staff";
+import { LoadingScreen } from "./components/loading-screen";
+import GroupChatPage from "./pages/group-chat-page";
+import CustomerServiceChatPage from "./pages/customer-service-chat-page";
+import OfficialAccountChatPage from "./pages/official-account-chat-page";
 
 function MainPage() {
   const navigate = useNavigate();
@@ -32,7 +38,7 @@ function MainPage() {
   }, [navigate]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen message="Loading UI" />;
   }
 
   return null;
@@ -42,11 +48,25 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<MainPage />} />
-      <Route path="/restaurant" element={<RestaurantUI />} />
+      <Route path="/restaurant/:restaurantId" element={<RestaurantUI />} />
+      <Route
+        path="/restaurant/:restaurantId/staff"
+        element={<RestaurantUIStaff />}
+      />
       <Route path="/ride/:rideId" element={<RideUI />} />
-      <Route path="/store" element={<StoreUI />} />
+      <Route path="/ride/:rideId/staff" element={<RideUIStaff />} />
+      <Route path="/store/:storeId" element={<StoreUI />} />
       <Route path="/staff" element={<StaffUI />} />
       <Route path="/customer" element={<CustomerUI />} />
+      <Route path="/chat" element={<GroupChatPage />} />
+      <Route
+        path="/chat/customer-service"
+        element={<CustomerServiceChatPage />}
+      />
+      <Route
+        path="/chat/official-account"
+        element={<OfficialAccountChatPage />}
+      />
     </Routes>
   </BrowserRouter>
 );
